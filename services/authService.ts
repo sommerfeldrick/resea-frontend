@@ -2,7 +2,7 @@
  * Authentication Service - SmileAI Integration
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export interface SmileAIUser {
   id: number;
@@ -34,7 +34,7 @@ class AuthService {
    * Login with email and password
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -58,7 +58,7 @@ class AuthService {
     
     if (token) {
       try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -84,7 +84,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken })
@@ -116,7 +116,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -151,7 +151,7 @@ class AuthService {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
