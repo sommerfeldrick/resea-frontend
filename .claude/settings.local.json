@@ -17,7 +17,17 @@
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git log:*)",
+      "Bash(git -C backend rm --cached .env.production)",
+      "Bash(git -C backend status)",
+      "Bash(curl:*)",
+      "Bash(nslookup app.smileai.com.br)",
+      "Bash(nslookup api.smileai.com.br)",
+      "Bash(npm run build:*)",
+      "Bash(/usr/local/bin/npm run build)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

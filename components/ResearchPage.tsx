@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { TaskPlan, MindMapData, ResearchResult, CompletedResearch, AcademicSource } from '../types';
-import { generateMindMap, performResearchStep, generateOutline, generateContentStream } from '../services/geminiService';
+import { generateMindMap, performResearchStep, generateOutline, generateContentStream } from '../services/apiService';
 import ReactFlow, * as Reactflow from 'reactflow';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js';
 

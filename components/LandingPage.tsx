@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { SparkleIcon, PaperclipIcon } from './icons';
-import { generateTaskPlan } from '../services/geminiService';
+import { generateTaskPlan } from '../services/apiService';
 import type { TaskPlan } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
@@ -11,6 +12,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user, logout } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,21 +35,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
     <div className="flex flex-col h-full">
       <header className="p-4 sm:p-6 flex justify-end">
           <div className="flex items-center gap-4">
-              <button 
+              <button
                 disabled
                 title="Funcionalidade em breve"
                 className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
               >
                   Atualizar
               </button>
-              <div className="w-9 h-9 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold">50</div>
+              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                {user?.credits || 50}
+              </div>
+              <button
+                onClick={logout}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                title="Sair"
+              >
+                Sair
+              </button>
           </div>
       </header>
       <main className="flex-grow flex items-center justify-center px-4">
         <div className="w-full max-w-2xl">
           <div className="text-left">
             <h1 className="text-3xl sm:text-4xl text-gray-600">
-              Olá, ricardo sommerfeld
+              Olá, {user?.name || 'Usuário'}
             </h1>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-1">
               O que posso pesquisar para você?

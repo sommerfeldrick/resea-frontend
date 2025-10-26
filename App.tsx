@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { ResearchPage } from './components/ResearchPage';
+import { LoginPage } from './components/LoginPage';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 
 const HistoryItem: React.FC<{
@@ -50,14 +52,15 @@ const HistoryItem: React.FC<{
 };
 
 
-const Sidebar: React.FC<{ 
+const Sidebar: React.FC<{
     onNewSearch: () => void;
     onSelectHistory: (id: string) => void;
     onDeleteHistory: (id: string) => void;
     activeItemId: string | null;
     history: CompletedResearch[];
 }> = ({ onNewSearch, onSelectHistory, onDeleteHistory, activeItemId, history }) => {
-    
+    const { user } = useAuth();
+
     // For demonstration, we'll split the mock history.
     const recents = history.slice(0, 1);
     const historyItems = history.slice(1);
@@ -94,9 +97,11 @@ const Sidebar: React.FC<{
             <div className="mt-auto">
                 <div className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-200">
                     <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-                        RS
+                        {user?.name?.substring(0, 2).toUpperCase() || 'U'}
                     </div>
-                    <span className="text-sm font-medium text-gray-800">ricardo somme...</span>
+                    <span className="text-sm font-medium text-gray-800 truncate">
+                        {user?.name || 'Usuário'}
+                    </span>
                 </div>
             </div>
         </aside>
@@ -157,12 +162,28 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
     );
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { isAuthenticated, loading } = useAuth();
   const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research'>('landing');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handlePlanGenerated = (plan: TaskPlan, userQuery: string) => {
     setTaskPlan(plan);
@@ -256,6 +277,14 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
