@@ -12,7 +12,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, logout } = useAuth();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { user, logout, refreshUser } = useAuth();
+
+  const handleRefreshCredits = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshUser();
+    } catch (error) {
+      console.error('Erro ao atualizar créditos:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,18 +48,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
       <header className="p-4 sm:p-6 flex justify-end">
           <div className="flex items-center gap-4">
               <button
-                disabled
-                title="Funcionalidade em breve"
-                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                onClick={handleRefreshCredits}
+                disabled={isRefreshing}
+                title="Atualizar créditos"
+                className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                  Atualizar
+                {isRefreshing ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    Atualizar
+                  </>
+                )}
               </button>
-              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                {user?.credits || 50}
+              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-lg" title="Créditos disponíveis">
+                {user?.credits ?? 50}
               </div>
               <button
                 onClick={logout}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Sair"
               >
                 Sair

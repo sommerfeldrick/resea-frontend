@@ -59,7 +59,8 @@ const Sidebar: React.FC<{
     activeItemId: string | null;
     history: CompletedResearch[];
 }> = ({ onNewSearch, onSelectHistory, onDeleteHistory, activeItemId, history }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const [showProfileMenu, setShowProfileMenu] = React.useState(false);
 
     // For demonstration, we'll split the mock history.
     const recents = history.slice(0, 1);
@@ -94,15 +95,70 @@ const Sidebar: React.FC<{
                     ))}
                 </div>
             </div>
-            <div className="mt-auto">
-                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-200">
+            <div className="mt-auto relative">
+                <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                >
                     <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
                         {user?.name?.substring(0, 2).toUpperCase() || 'U'}
                     </div>
-                    <span className="text-sm font-medium text-gray-800 truncate">
+                    <span className="text-sm font-medium text-gray-800 truncate flex-1 text-left">
                         {user?.name || 'Usuário'}
                     </span>
-                </div>
+                    <svg
+                        className={`w-4 h-4 text-gray-600 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                {showProfileMenu && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <button
+                            onClick={() => {
+                                setShowProfileMenu(false);
+                                alert('Funcionalidade de perfil em breve');
+                            }}
+                            className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Ver Perfil
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowProfileMenu(false);
+                                alert('Funcionalidade de configurações em breve');
+                            }}
+                            className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Configurações
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                            onClick={() => {
+                                setShowProfileMenu(false);
+                                logout();
+                            }}
+                            className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Sair
+                        </button>
+                    </div>
+                )}
             </div>
         </aside>
     );
