@@ -248,24 +248,9 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
   return (
     <div className="w-full">
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Modelos de Escrita Acadêmica</h2>
-            <p className="text-gray-600 text-lg">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
-          </div>
-          <button
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm ${
-              showFavoritesOnly
-                ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow-yellow-200'
-                : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-indigo-300 hover:shadow-md'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill={showFavoritesOnly ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-            Favoritos ({favorites.size})
-          </button>
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Modelos de Escrita Acadêmica</h2>
+          <p className="text-gray-600 text-lg">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
         </div>
       </div>
 
@@ -289,11 +274,6 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
             </button>
           );
         })}
-      </div>
-
-      {/* Descrição da Categoria */}
-      <div className="mb-8 p-5 bg-gradient-to-br from-indigo-50 to-white rounded-xl border-2 border-indigo-100 shadow-sm">
-        <p className="text-sm text-gray-700 leading-relaxed">{categoryInfo[selectedCategory as keyof typeof categoryInfo].description}</p>
       </div>
 
       {/* Grid de Templates */}

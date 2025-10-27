@@ -7,6 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SmileAI Research Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      }
+      // Load saved theme preference on page load
+      if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/reactflow@11.11.3/dist/style.css" rel="stylesheet">
     <style>
       body {
