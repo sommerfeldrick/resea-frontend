@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { ResearchPage } from './components/ResearchPage';
 import { LoginPage } from './components/LoginPage';
+import { ContentGenerationFlow } from './components/ContentGenerationFlow';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
@@ -228,7 +229,7 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
-  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research'>('landing');
+  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation'>('content_generation');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
@@ -264,7 +265,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleNewSearch = () => {
-    setView('landing');
+    setView('content_generation');
     setTaskPlan(null);
     setQuery('');
     setCurrentResearch(null);
@@ -308,6 +309,8 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     switch (view) {
+      case 'content_generation':
+        return <ContentGenerationFlow onBack={handleNewSearch} />;
       case 'landing':
         return <LandingPage onPlanGenerated={handlePlanGenerated} />;
       case 'plan_confirmation':
@@ -325,7 +328,7 @@ const AppContent: React.FC = () => {
         }
         return <div className="flex items-center justify-center h-full">Carregando...</div>;
       default:
-        return <LandingPage onPlanGenerated={handlePlanGenerated} />;
+        return <ContentGenerationFlow onBack={handleNewSearch} />;
     }
   }
 

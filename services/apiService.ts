@@ -1,14 +1,15 @@
 /**
  * API Service - Connects frontend to backend
- * Replaces direct Gemini API calls with secure backend proxy
+ * Uses new /api/research/* endpoints for content generation
  */
 
 import type { TaskPlan, MindMapData, ResearchResult, AcademicSource } from '../types';
+import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 /**
- * Generic API request helper
+ * Generic API request helper with authentication
  */
 async function apiRequest<T>(
   endpoint: string,
@@ -16,10 +17,14 @@ async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Get auth token
+  const token = authService.getToken();
+
   const config: RequestInit = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...options.headers
     }
   };
@@ -40,7 +45,7 @@ async function apiRequest<T>(
       throw new Error(data.error);
     }
 
-    return data.data || data;
+    return data;
   } catch (error: any) {
     console.error(`API request failed: ${endpoint}`, error);
     throw new Error(error.message || 'Failed to connect to server');
@@ -48,7 +53,29 @@ async function apiRequest<T>(
 }
 
 /**
- * Generate task plan from user query
+ * Generate research plan from user query
+ * Uses new /api/research/plan endpoint
+ */
+export async function generateResearchPlan(query: string, template?: string): Promise<{
+  plan: string;
+  remaining: number;
+}> {
+  console.log('🔄 Generating research plan via backend...');
+
+  const response = await apiRequest<any>('/api/research/plan', {
+    method: 'POST',
+    body: JSON.stringify({ query, template })
+  });
+
+  console.log('✅ Research plan generated', { remaining: response.remaining });
+  return {
+    plan: response.plan,
+    remaining: response.remaining
+  };
+}
+
+/**
+ * Generate task plan from user query (legacy - kept for compatibility)
  */
 export async function generateTaskPlan(query: string): Promise<TaskPlan> {
   console.log('🔄 Generating task plan via backend...');
@@ -200,6 +227,71 @@ export async function* generateContentStream(
   } finally {
     reader.releaseLock();
   }
+}
+
+/**
+ * Generate content using new research API
+ * Uses scraping + multi-AI fallback
+ */
+export async function generateResearchContent(
+  query: string,
+  template?: string
+): Promise<{
+  content: string;
+  wordCount: number;
+  sourcesCount: number;
+  remaining: number;
+}> {
+  console.log('🔄 Generating content via backend (scraping + AI)...');
+
+  const response = await apiRequest<any>('/api/research/generate', {
+    method: 'POST',
+    body: JSON.stringify({ query, template })
+  });
+
+  console.log('✅ Content generated', {
+    words: response.wordCount,
+    sources: response.sourcesCount,
+    remaining: response.remaining
+  });
+
+  return {
+    content: response.content,
+    wordCount: response.wordCount,
+    sourcesCount: response.sourcesCount,
+    remaining: response.remaining
+  };
+}
+
+/**
+ * Finalize document and deduct credits
+ * This is the ONLY endpoint that actually charges credits
+ */
+export async function finalizeDocument(
+  content: string,
+  title?: string
+): Promise<{
+  wordCount: number;
+  remaining: number;
+  message: string;
+}> {
+  console.log('🔄 Finalizing document and deducting credits...');
+
+  const response = await apiRequest<any>('/api/research/finalize', {
+    method: 'POST',
+    body: JSON.stringify({ content, title })
+  });
+
+  console.log('✅ Document finalized', {
+    charged: response.wordCount,
+    remaining: response.remaining
+  });
+
+  return {
+    wordCount: response.wordCount,
+    remaining: response.remaining,
+    message: response.message
+  };
 }
 
 /**
