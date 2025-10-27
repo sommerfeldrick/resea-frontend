@@ -247,15 +247,15 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
 
   return (
     <div className="w-full">
-      <div className="mb-8">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Modelos de Escrita Acadêmica</h2>
-          <p className="text-gray-600 text-lg">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
+      <div className="mb-12">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Modelos de Escrita Acadêmica</h2>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
         </div>
       </div>
 
       {/* Tabs de Categorias */}
-      <div className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
         {categories.map((cat) => {
           const info = categoryInfo[cat];
           const isActive = selectedCategory === cat;
@@ -265,8 +265,8 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
               onClick={() => setSelectedCategory(cat)}
               className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all shadow-sm ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg scale-105'
-                  : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                  ? 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-indigo-200 dark:shadow-indigo-900 shadow-lg scale-105'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md'
               }`}
             >
               {getCategoryIcon(info.icon)}
@@ -277,7 +277,7 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
       </div>
 
       {/* Grid de Templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredTemplates.map((template) => (
           <TemplateCard
             key={template.id}

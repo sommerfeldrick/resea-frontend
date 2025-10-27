@@ -48,7 +48,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
   return (
     <>
-    <div className="group relative text-left bg-white border border-gray-200 rounded-xl hover:shadow-xl hover:border-indigo-400 transition-all duration-200 overflow-hidden">
+    <div className="group relative text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-xl hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 overflow-hidden">
       {/* Botão de Favorito */}
       <button
         onClick={(e) => {
@@ -71,21 +71,21 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
       <button onClick={onSelect} className="w-full text-left">
         {/* Header com ícone e badges */}
-        <div className="p-6 pb-4 bg-gradient-to-br from-indigo-50 to-white">
+        <div className="p-6 pb-4 bg-gradient-to-br from-indigo-50 dark:from-gray-700 to-white dark:to-gray-800">
           <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-white shadow-md">
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-white dark:bg-gray-700 shadow-md">
               {getTemplateIcon(template.icon)}
             </div>
             <div className="flex flex-col items-end gap-1.5">
-              <div className="flex items-center gap-1 px-2 py-1 bg-white rounded-md shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1 px-2 py-1 bg-white dark:bg-gray-700 rounded-md shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
-                <span className="text-xs font-semibold text-gray-700">{template.popularityScore}%</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{template.popularityScore}%</span>
               </div>
               {usageCount > 0 && (
                 <div
-                  className="flex items-center gap-1 px-2 py-1 bg-indigo-600 rounded-md shadow-sm"
+                  className="flex items-center gap-1 px-2 py-1 bg-indigo-600 dark:bg-indigo-500 rounded-md shadow-sm"
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
                 >
@@ -94,7 +94,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
                   </svg>
                   <span className="text-xs font-semibold text-white">{usageCount}x</span>
                   {showTooltip && (
-                    <div className="absolute right-0 top-full mt-1 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-20 shadow-lg">
+                    <div className="absolute right-0 top-full mt-1 px-3 py-1.5 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap z-20 shadow-lg">
                       Você já usou este template
                     </div>
                   )}
@@ -103,17 +103,17 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
             </div>
           </div>
 
-          <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors leading-snug">
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-snug">
             {template.title}
           </h3>
         </div>
 
         {/* Corpo do card */}
         <div className="px-6 py-4">
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">{template.description}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2 leading-relaxed">{template.description}</p>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
