@@ -75,8 +75,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
                   </>
                 )}
               </button>
-              <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-lg" title="Créditos disponíveis">
-                {user?.credits ?? 50}
+              <div className="flex flex-col items-end gap-1">
+                {user?.credits !== undefined && (
+                  <div className="px-3 py-1 rounded-full bg-indigo-600 text-white font-bold text-sm shadow-lg" title="Créditos disponíveis">
+                    {user.credits} créditos
+                  </div>
+                )}
+                {user?.remaining_words !== undefined && (
+                  <div className="px-3 py-1 rounded-full bg-green-600 text-white font-semibold text-xs shadow-md" title="Palavras restantes">
+                    {typeof user.remaining_words === 'string' ? user.remaining_words : `${user.remaining_words} palavras`}
+                  </div>
+                )}
+                {!user?.credits && !user?.remaining_words && (
+                  <div className="px-3 py-1 rounded-full bg-gray-400 text-white font-semibold text-xs shadow-md">
+                    Carregando...
+                  </div>
+                )}
               </div>
               <button
                 onClick={logout}

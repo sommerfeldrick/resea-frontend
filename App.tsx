@@ -97,7 +97,7 @@ const Sidebar: React.FC<{
     }
 
     return (
-        <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
+        <aside className="w-56 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <LogoIcon className="h-8 w-8" />
@@ -120,26 +120,10 @@ const Sidebar: React.FC<{
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
-            <div className="mt-6 mb-4">
-                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Recentes</h3>
-                <div className="space-y-1">
-                    {recents.map((item) => (
-                       <HistoryItem key={item.id} item={item} isActive={activeItemId === item.id} onSelect={onSelectHistory} onDelete={onDeleteHistory} />
-                    ))}
-                </div>
-            </div>
 
-            <div className="border-t border-gray-300 my-4"></div>
+            <div className="flex-1"></div>
 
-            <div className="mt-4 flex-1 overflow-y-auto">
-                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Histórico</h3>
-                <div className="space-y-1">
-                    {historyItems.map((item) => (
-                         <HistoryItem key={item.id} item={item} isActive={activeItemId === item.id} onSelect={onSelectHistory} onDelete={onDeleteHistory} />
-                    ))}
-                </div>
-            </div>
-            <div className="mt-auto space-y-3">
+            <div className="space-y-3">
                 {/* Botão de Feedback */}
                 <button
                     onClick={() => window.open('https://smileai.com.br/dashboard/user/support', '_blank')}
