@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { academicTemplates, categoryInfo, AcademicTemplate } from '../data/academicTemplates';
 import type { TaskPlan } from '../types';
+import { templateService } from '../services/templateService';
+import { TemplateCard } from './TemplateCard';
+import { useTemplateFeatures } from '../hooks/useTemplateFeatures';
 
 interface TemplateModalProps {
   template: AcademicTemplate;
   onClose: () => void;
-  onSubmit: (filledTemplate: string) => void;
+  onSubmit: (filledTemplate: string, filledData: Record<string, any>) => void;
 }
 
 const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubmit }) => {
@@ -16,6 +19,12 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Preparar dados preenchidos combinando formData e tags
+    const allFilledData: Record<string, any> = { ...formData };
+    Object.entries(tags).forEach(([key, value]) => {
+      allFilledData[key] = value;
+    });
+
     // Substituir placeholders no template
     let filledPrompt = template.promptTemplate;
     template.requiredFields.forEach(field => {
@@ -24,7 +33,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
       filledPrompt = filledPrompt.replace(new RegExp(placeholder, 'g'), value || '');
     });
 
-    onSubmit(filledPrompt);
+    onSubmit(filledPrompt, allFilledData);
   };
 
   const handleAddTag = (fieldName: string) => {
@@ -195,15 +204,69 @@ interface AcademicTemplatesGalleryProps {
 export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> = ({ onTemplateSelect }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('introducao');
   const [selectedTemplate, setSelectedTemplate] = useState<AcademicTemplate | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  const filteredTemplates = academicTemplates.filter(t => t.category === selectedCategory);
+  const { favorites, usageCounts, toggleFavorite, addToHistory, isFavorite, getUsageCount } = useTemplateFeatures();
+
+  const filteredTemplates = useMemo(() => {
+    let templates = academicTemplates.filter(t => t.category === selectedCategory);
+
+    // Filtrar por favoritos
+    if (showFavoritesOnly) {
+      templates = templates.filter(t => isFavorite(t.id));
+    }
+
+    // Filtrar por busca
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      templates = templates.filter(t =>
+        t.title.toLowerCase().includes(query) ||
+        t.description.toLowerCase().includes(query)
+      );
+    }
+
+    return templates;
+  }, [selectedCategory, showFavoritesOnly, searchQuery, favorites]);
+
   const categories = Object.keys(categoryInfo) as Array<keyof typeof categoryInfo>;
 
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Modelos de Escrita Acadêmica</h2>
-        <p className="text-gray-600">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Modelos de Escrita Acadêmica</h2>
+            <p className="text-gray-600">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
+          </div>
+          <button
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              showFavoritesOnly
+                ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill={showFavoritesOnly ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+            Favoritos ({favorites.size})
+          </button>
+        </div>
+
+        {/* Barra de Pesquisa */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       {/* Tabs de Categorias */}
@@ -236,49 +299,47 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
       {/* Grid de Templates */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTemplates.map((template) => (
-          <button
+          <TemplateCard
             key={template.id}
-            onClick={() => setSelectedTemplate(template)}
-            className="text-left p-4 bg-white border border-gray-200 rounded-lg hover:shadow-lg hover:border-indigo-300 transition-all group"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <span className="text-3xl">{template.icon}</span>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-                {template.popularityScore}%
-              </div>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
-              {template.title}
-            </h3>
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{template.description}</p>
-            <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                ~{template.estimatedTime}min
-              </span>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                template.difficulty === 'beginner' ? 'bg-green-100 text-green-700' :
-                template.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-red-100 text-red-700'
-              }`}>
-                {template.difficulty === 'beginner' ? 'Iniciante' : template.difficulty === 'intermediate' ? 'Intermediário' : 'Avançado'}
-              </span>
-            </div>
-          </button>
+            template={template}
+            isFavorite={isFavorite(template.id)}
+            usageCount={getUsageCount(template.id)}
+            onSelect={() => setSelectedTemplate(template)}
+            onFavoriteToggle={() => toggleFavorite(template.id)}
+            showPreview={true}
+          />
         ))}
       </div>
+
+      {filteredTemplates.length === 0 && (
+        <div className="text-center py-12">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-gray-600">Nenhum template encontrado</p>
+          {(searchQuery || showFavoritesOnly) && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setShowFavoritesOnly(false);
+              }}
+              className="mt-2 text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Modal */}
       {selectedTemplate && (
         <TemplateModal
           template={selectedTemplate}
           onClose={() => setSelectedTemplate(null)}
-          onSubmit={(prompt) => {
+          onSubmit={(prompt, filledData) => {
+            // Salvar no histórico
+            addToHistory(selectedTemplate.id, filledData, prompt);
+            // Enviar prompt
             onTemplateSelect(prompt);
             setSelectedTemplate(null);
           }}

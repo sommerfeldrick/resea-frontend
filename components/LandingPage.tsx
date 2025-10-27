@@ -4,6 +4,8 @@ import { generateTaskPlan } from '../services/apiService';
 import type { TaskPlan } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { AcademicTemplatesGallery } from './AcademicTemplatesGallery';
+import { FileUploadModal } from './FileUploadModal';
+import type { UploadedFile } from '../types/templates';
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
@@ -14,6 +16,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
   const { user, logout, refreshUser } = useAuth();
 
   const handleRefreshCredits = async () => {
@@ -105,9 +109,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
               />
               <div className="p-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <button type="button" disabled className="flex items-center gap-2 rounded-lg bg-white p-2 border border-gray-200 text-sm font-medium text-gray-400 cursor-not-allowed" title="Funcionalidade em breve">
+                    <button
+                      type="button"
+                      onClick={() => setShowFileUpload(true)}
+                      className="flex items-center gap-2 rounded-lg bg-white p-2 border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                      title="Anexar arquivos PDF, DOCX, TXT..."
+                    >
                         <PaperclipIcon className="w-5 h-5" />
                         Anexar Arquivos
+                        {attachedFiles.length > 0 && (
+                          <span className="ml-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                            {attachedFiles.length}
+                          </span>
+                        )}
                     </button>
                 </div>
                  <button 
@@ -142,6 +156,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
           </div>
         </div>
       </main>
+
+      {/* Modal de Upload */}
+      {showFileUpload && (
+        <FileUploadModal
+          onClose={() => setShowFileUpload(false)}
+          onFilesUploaded={(files) => {
+            setAttachedFiles(files);
+            setShowFileUpload(false);
+          }}
+          allowMultiple={true}
+        />
+      )}
     </div>
   );
 };
