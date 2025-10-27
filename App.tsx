@@ -70,10 +70,10 @@ const Sidebar: React.FC<{
 
     if (isCollapsed) {
         return (
-            <aside className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col p-2">
+            <aside className="w-16 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col p-2 h-full relative">
                 <button
                     onClick={onToggleCollapse}
-                    className="w-full flex items-center justify-center p-2 mb-4 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center p-2 mb-4 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     title="Expandir sidebar"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -82,13 +82,13 @@ const Sidebar: React.FC<{
                 </button>
                 <button
                     onClick={onNewSearch}
-                    className="w-full flex items-center justify-center p-2 text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+                    className="w-full flex items-center justify-center p-2 text-white bg-gray-800 dark:bg-indigo-600 rounded-lg hover:bg-gray-700 dark:hover:bg-indigo-700 transition-colors"
                     title="Novo Documento"
                 >
                     <PlusIcon className="h-5 w-5" />
                 </button>
-                <div className="mt-auto">
-                    <div className="w-10 h-10 mx-auto rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                         {user?.name?.substring(0, 1).toUpperCase() || 'U'}
                     </div>
                 </div>
@@ -97,15 +97,15 @@ const Sidebar: React.FC<{
     }
 
     return (
-        <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
+        <aside className="w-64 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col p-4 h-full relative">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
-                    <LogoIcon className="h-8 w-8" />
-                    <span className="text-xl font-bold text-gray-900">SmileAI</span>
+                    <LogoIcon className="h-8 w-8 dark:text-white" />
+                    <span className="text-xl font-bold text-gray-900 dark:text-white">SmileAI</span>
                 </div>
                 <button
                     onClick={onToggleCollapse}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                     title="Recolher sidebar"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -115,34 +115,32 @@ const Sidebar: React.FC<{
             </div>
             <button
                 onClick={onNewSearch}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-800 dark:bg-indigo-600 rounded-lg hover:bg-gray-700 dark:hover:bg-indigo-700 transition-colors"
             >
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
 
-            <div className="flex-1"></div>
-
-            {/* Card de Perfil */}
-            <div className="mt-auto">
+            {/* Card de Perfil - Fixo no fim da sidebar */}
+            <div className="absolute bottom-4 left-4 right-4">
                 <div className="relative">
                     <button
                         onClick={() => setShowProfileMenu(!showProfileMenu)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200 bg-white"
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
                     >
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                             {user?.name?.substring(0, 2).toUpperCase() || 'U'}
                         </div>
                         <div className="flex-1 text-left overflow-hidden">
-                            <div className="text-sm font-medium text-gray-900 truncate">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                 {user?.name || 'Usuário'}
                             </div>
-                            <div className="text-xs text-gray-500 truncate">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {user?.email || ''}
                             </div>
                         </div>
                         <svg
-                            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${showProfileMenu ? 'rotate-180' : ''}`}
+                            className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform flex-shrink-0 ${showProfileMenu ? 'rotate-180' : ''}`}
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -153,15 +151,15 @@ const Sidebar: React.FC<{
                     </button>
 
                     {showProfileMenu && (
-                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-50">
                             <button
                                 onClick={() => {
                                     setShowProfileMenu(false);
                                     logout();
                                 }}
-                                className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                className="w-full px-4 py-2.5 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center gap-3"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                                 Sair
