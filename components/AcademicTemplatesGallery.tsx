@@ -233,18 +233,18 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
 
   return (
     <div className="w-full">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Modelos de Escrita Acadêmica</h2>
-            <p className="text-gray-600">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Modelos de Escrita Acadêmica</h2>
+            <p className="text-gray-600 text-lg">Escolha um modelo pronto para iniciar sua pesquisa rapidamente</p>
           </div>
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm ${
               showFavoritesOnly
-                ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-300'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-400 shadow-yellow-200'
+                : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-indigo-300 hover:shadow-md'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill={showFavoritesOnly ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
@@ -261,16 +261,16 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
             placeholder="Buscar templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full px-5 py-3 pl-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
           />
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-4 top-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
       </div>
 
       {/* Tabs de Categorias */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         {categories.map((cat) => {
           const info = categoryInfo[cat];
           const isActive = selectedCategory === cat;
@@ -278,13 +278,13 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all shadow-sm ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-indigo-600 text-white shadow-indigo-200 shadow-lg scale-105'
+                  : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-indigo-300 hover:shadow-md'
               }`}
             >
-              <span>{info.icon}</span>
+              <span className="text-lg">{info.icon}</span>
               <span>{info.label}</span>
             </button>
           );
@@ -292,12 +292,12 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
       </div>
 
       {/* Descrição da Categoria */}
-      <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-sm text-gray-700">{categoryInfo[selectedCategory as keyof typeof categoryInfo].description}</p>
+      <div className="mb-8 p-5 bg-gradient-to-br from-indigo-50 to-white rounded-xl border-2 border-indigo-100 shadow-sm">
+        <p className="text-sm text-gray-700 leading-relaxed">{categoryInfo[selectedCategory as keyof typeof categoryInfo].description}</p>
       </div>
 
       {/* Grid de Templates */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTemplates.map((template) => (
           <TemplateCard
             key={template.id}

@@ -143,9 +143,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
             </div>
           </form>
           {error && <p className="mt-4 text-sm text-red-600 text-center">{error}</p>}
-          <p className="mt-4 text-xs text-gray-500 text-center">
-            <span className="font-semibold">Exemplo:</span> 100% Pesquisa Humana sobre Aplicações de IA na Medicina
-          </p>
 
           <div className="mt-12">
             <AcademicTemplatesGallery
