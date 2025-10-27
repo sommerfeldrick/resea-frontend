@@ -95,70 +95,83 @@ const Sidebar: React.FC<{
                     ))}
                 </div>
             </div>
-            <div className="mt-auto relative">
+            <div className="mt-auto space-y-3">
+                {/* Botão de Feedback */}
                 <button
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                    onClick={() => window.open('https://smileai.com.br/dashboard/user/support', '_blank')}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-                        {user?.name?.substring(0, 2).toUpperCase() || 'U'}
-                    </div>
-                    <span className="text-sm font-medium text-gray-800 truncate flex-1 text-left">
-                        {user?.name || 'Usuário'}
-                    </span>
-                    <svg
-                        className={`w-4 h-4 text-gray-600 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
+                    Feedback
                 </button>
 
-                {showProfileMenu && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                        <button
-                            onClick={() => {
-                                setShowProfileMenu(false);
-                                alert('Funcionalidade de perfil em breve');
-                            }}
-                            className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                {/* Card de Perfil */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowProfileMenu(!showProfileMenu)}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200 bg-white"
+                    >
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                            {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                        </div>
+                        <div className="flex-1 text-left overflow-hidden">
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                                {user?.name || 'Usuário'}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                                {user?.email || ''}
+                            </div>
+                        </div>
+                        <svg
+                            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${showProfileMenu ? 'rotate-180' : ''}`}
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Ver Perfil
-                        </button>
-                        <button
-                            onClick={() => {
-                                setShowProfileMenu(false);
-                                alert('Funcionalidade de configurações em breve');
-                            }}
-                            className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Configurações
-                        </button>
-                        <div className="border-t border-gray-200 my-1"></div>
-                        <button
-                            onClick={() => {
-                                setShowProfileMenu(false);
-                                logout();
-                            }}
-                            className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Sair
-                        </button>
-                    </div>
-                )}
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    {showProfileMenu && (
+                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50">
+                            <div className="px-4 py-3 border-b border-gray-100">
+                                <div className="text-xs text-gray-500 mb-1">{user?.type === 'super_admin' ? 'Admin' : 'Free'}</div>
+                                <div className="flex items-baseline gap-2">
+                                    <div className="text-sm font-medium text-gray-900">Credit</div>
+                                    <div className="text-lg font-bold text-gray-900">
+                                        {parseFloat(user?.remaining_words?.toString() || '0').toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-2">
+                                    <div className="text-sm font-medium text-gray-900">Humanize words</div>
+                                    <div className="text-lg font-bold text-gray-900">0</div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowProfileMenu(false);
+                                    logout();
+                                }}
+                                className="w-full px-4 py-2.5 text-sm text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Log out
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </aside>
     );

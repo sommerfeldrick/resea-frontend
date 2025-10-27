@@ -11,6 +11,8 @@ export interface SmileAIUser {
   avatar?: string;
   plan?: string;
   credits?: number;
+  remaining_words?: string | number; // Palavras restantes do plano
+  type?: string; // Tipo de usuário (admin, user, etc)
 }
 
 export interface AuthToken {
