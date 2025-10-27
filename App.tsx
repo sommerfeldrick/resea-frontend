@@ -97,7 +97,7 @@ const Sidebar: React.FC<{
     }
 
     return (
-        <aside className="w-56 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
+        <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                     <LogoIcon className="h-8 w-8" />
