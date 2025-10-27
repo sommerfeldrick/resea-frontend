@@ -18,14 +18,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
   const [error, setError] = useState<string | null>(null);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
-  const [wordsUsage, setWordsUsage] = useState(creditService.getWordsUsage());
+  const [wordsUsage, setWordsUsage] = useState(creditService.getWordsUsageSync());
   const { user } = useAuth();
 
-  // Atualizar uso de palavras quando o usuário mudar
+  // Carregar créditos da API quando componente montar
   useEffect(() => {
-    if (user) {
-      setWordsUsage(creditService.getWordsUsage());
-    }
+    const loadCredits = async () => {
+      if (user) {
+        try {
+          await creditService.initialize();
+          const usage = await creditService.getWordsUsage();
+          setWordsUsage(usage);
+        } catch (error) {
+          console.error('Erro ao carregar créditos:', error);
+        }
+      }
+    };
+
+    loadCredits();
+
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(loadCredits, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,129 +1,147 @@
 /**
  * Serviço de Gestão de Créditos
  *
- * Gerencia o consumo de palavras baseado no pacote do usuário SmileAI
+ * Integrado com API do backend para gerenciar consumo de palavras
  */
 
 import { authService } from './authService';
 
-// Mapeamento de pacotes para palavras
-const PACKAGE_WORDS: Record<string, number> = {
-  'free': 10000,           // Pacote gratuito: 10k palavras
-  'starter': 50000,        // Pacote starter: 50k palavras
-  'basic': 100000,         // Pacote básico: 100k palavras
-  'pro': 250000,           // Pacote pro: 250k palavras
-  'premium': 500000,       // Pacote premium: 500k palavras
-  'business': 1000000,     // Pacote business: 1M palavras
-  'enterprise': 5000000,   // Pacote enterprise: 5M palavras
-};
-
-const STORAGE_KEY = 'smileai_words_consumed';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface WordsUsage {
   totalWords: number;
   consumedWords: number;
   remainingWords: number;
   packageName: string;
+  percentage?: number;
   lastUpdated: Date;
 }
 
+interface CreditStatsResponse {
+  success: boolean;
+  plan: string;
+  limit: number;
+  consumed: number;
+  remaining: number;
+  percentage: number;
+}
+
 class CreditService {
+  private cache: WordsUsage | null = null;
+  private cacheTime: number = 0;
+  private readonly CACHE_DURATION = 30000; // 30 segundos
+
   /**
-   * Obter pacote do usuário
+   * Obter token de autenticação
    */
-  private getUserPackage(): string {
-    const user = authService.getUser();
-    // A API do SmileAI deve retornar o campo 'plan' ou 'package'
-    return user?.plan?.toLowerCase() || user?.package?.toLowerCase() || 'free';
+  private getAuthToken(): string | null {
+    return authService.getToken();
   }
 
   /**
-   * Obter total de palavras do pacote
+   * Buscar estatísticas de créditos da API
    */
-  getTotalWords(): number {
-    const packageName = this.getUserPackage();
-    return PACKAGE_WORDS[packageName] || PACKAGE_WORDS['free'];
-  }
-
-  /**
-   * Obter palavras consumidas (do localStorage)
-   */
-  getConsumedWords(): number {
+  async fetchCredits(): Promise<WordsUsage> {
     try {
-      const userId = authService.getUser()?.id;
-      if (!userId) return 0;
+      const token = this.getAuthToken();
+      if (!token) {
+        throw new Error('Usuário não autenticado');
+      }
 
-      const stored = localStorage.getItem(`${STORAGE_KEY}_${userId}`);
-      if (!stored) return 0;
+      const response = await fetch(`${API_BASE_URL}/api/research/credits`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      const data = JSON.parse(stored);
-      return data.consumed || 0;
-    } catch {
-      return 0;
-    }
-  }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-  /**
-   * Adicionar palavras consumidas
-   */
-  addConsumedWords(words: number): void {
-    try {
-      const userId = authService.getUser()?.id;
-      if (!userId) return;
+      const data: CreditStatsResponse = await response.json();
 
-      const currentConsumed = this.getConsumedWords();
-      const newConsumed = currentConsumed + words;
+      const usage: WordsUsage = {
+        totalWords: data.limit,
+        consumedWords: data.consumed,
+        remainingWords: data.remaining,
+        packageName: data.plan,
+        percentage: data.percentage,
+        lastUpdated: new Date()
+      };
 
-      localStorage.setItem(
-        `${STORAGE_KEY}_${userId}`,
-        JSON.stringify({
-          consumed: newConsumed,
-          lastUpdated: new Date().toISOString(),
-        })
-      );
+      // Atualiza cache
+      this.cache = usage;
+      this.cacheTime = Date.now();
+
+      return usage;
     } catch (error) {
-      console.error('Erro ao salvar palavras consumidas:', error);
+      console.error('Erro ao buscar créditos:', error);
+
+      // Fallback: retorna cache se disponível
+      if (this.cache) {
+        return this.cache;
+      }
+
+      // Fallback final: retorna valores padrão
+      return {
+        totalWords: 10000,
+        consumedWords: 0,
+        remainingWords: 10000,
+        packageName: 'free',
+        lastUpdated: new Date()
+      };
     }
   }
 
   /**
-   * Obter uso de palavras completo
+   * Obter uso de palavras (com cache)
    */
-  getWordsUsage(): WordsUsage {
-    const totalWords = this.getTotalWords();
-    const consumedWords = this.getConsumedWords();
-    const remainingWords = Math.max(0, totalWords - consumedWords);
-    const packageName = this.getUserPackage();
+  async getWordsUsage(): Promise<WordsUsage> {
+    // Retorna cache se ainda válido
+    const now = Date.now();
+    if (this.cache && (now - this.cacheTime) < this.CACHE_DURATION) {
+      return this.cache;
+    }
+
+    // Busca da API
+    return await this.fetchCredits();
+  }
+
+  /**
+   * Obter uso de palavras de forma síncrona (usa cache)
+   */
+  getWordsUsageSync(): WordsUsage {
+    if (this.cache) {
+      return this.cache;
+    }
+
+    // Se não tem cache, retorna valores padrão e busca em background
+    this.fetchCredits();
 
     return {
-      totalWords,
-      consumedWords,
-      remainingWords,
-      packageName,
-      lastUpdated: new Date(),
+      totalWords: 10000,
+      consumedWords: 0,
+      remainingWords: 10000,
+      packageName: 'free',
+      lastUpdated: new Date()
     };
   }
 
   /**
    * Verificar se tem palavras disponíveis
    */
-  hasWordsAvailable(requiredWords: number = 1): boolean {
-    const usage = this.getWordsUsage();
+  async hasWordsAvailable(requiredWords: number = 1): Promise<boolean> {
+    const usage = await this.getWordsUsage();
     return usage.remainingWords >= requiredWords;
   }
 
   /**
-   * Resetar contagem (útil para testes ou renovação de pacote)
+   * Invalidar cache (forçar nova busca)
    */
-  resetConsumedWords(): void {
-    try {
-      const userId = authService.getUser()?.id;
-      if (!userId) return;
-
-      localStorage.removeItem(`${STORAGE_KEY}_${userId}`);
-    } catch (error) {
-      console.error('Erro ao resetar palavras:', error);
-    }
+  invalidateCache(): void {
+    this.cache = null;
+    this.cacheTime = 0;
   }
 
   /**
@@ -147,16 +165,13 @@ class CreditService {
   }
 
   /**
-   * Sincronizar com o servidor (se houver endpoint)
+   * Inicializar - busca créditos ao carregar
    */
-  async syncWithServer(): Promise<void> {
+  async initialize(): Promise<void> {
     try {
-      // Se a API tiver um endpoint para palavras consumidas, podemos sincronizar aqui
-      // Por enquanto, mantemos apenas local
-      const usage = this.getWordsUsage();
-      console.log('Uso de palavras:', usage);
+      await this.fetchCredits();
     } catch (error) {
-      console.error('Erro ao sincronizar palavras:', error);
+      console.error('Erro ao inicializar créditos:', error);
     }
   }
 }
