@@ -3,6 +3,7 @@ import { SparkleIcon, PaperclipIcon } from './icons';
 import { generateTaskPlan } from '../services/apiService';
 import type { TaskPlan } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { AcademicTemplatesGallery } from './AcademicTemplatesGallery';
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
@@ -98,7 +99,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Pergunte ao Resea..."
+                placeholder="Pergunte ao SmileAI..."
                 className="w-full h-28 p-4 text-base border-none focus:ring-0 resize-none bg-transparent"
                 disabled={isLoading}
               />
@@ -132,24 +133,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
             <span className="font-semibold">Exemplo:</span> 100% Pesquisa Humana sobre Aplicações de IA na Medicina
           </p>
 
-          <div className="mt-12 p-5 bg-gradient-to-r from-gray-800 to-indigo-900 rounded-lg flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/10 p-2 rounded-full">
-                    <SparkleIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                    <h3 className="text-white font-semibold">Assine para pesquisas 10X mais rápidas + 100% de conteúdo humano</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-300 mt-1">
-                        <span>✓ Pensamento profundo, pesquisa e escrita</span>
-                        <span>✓ Gerar conteúdo 100% humano</span>
-                        <span>✓ Citações e referências precisas</span>
-                        <span>✓ Edição de IA ilimitada</span>
-                    </div>
-                </div>
-              </div>
-              <button className="px-5 py-2.5 text-sm font-semibold text-gray-900 bg-white rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0">
-                Atualizar
-              </button>
+          <div className="mt-12">
+            <AcademicTemplatesGallery
+              onTemplateSelect={(prompt) => {
+                setQuery(prompt);
+              }}
+            />
           </div>
         </div>
       </main>

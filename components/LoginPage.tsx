@@ -32,7 +32,7 @@ export const LoginPage: React.FC = () => {
           <div className="inline-flex items-center gap-3 mb-4">
             <LogoIcon className="h-12 w-12" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Resea.AI
+              SmileAI
             </h1>
           </div>
           <p className="text-gray-600 text-lg">

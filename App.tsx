@@ -58,7 +58,9 @@ const Sidebar: React.FC<{
     onDeleteHistory: (id: string) => void;
     activeItemId: string | null;
     history: CompletedResearch[];
-}> = ({ onNewSearch, onSelectHistory, onDeleteHistory, activeItemId, history }) => {
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
+}> = ({ onNewSearch, onSelectHistory, onDeleteHistory, activeItemId, history, isCollapsed, onToggleCollapse }) => {
     const { user, logout } = useAuth();
     const [showProfileMenu, setShowProfileMenu] = React.useState(false);
 
@@ -66,11 +68,50 @@ const Sidebar: React.FC<{
     const recents = history.slice(0, 1);
     const historyItems = history.slice(1);
 
+    if (isCollapsed) {
+        return (
+            <aside className="w-16 bg-gray-50 border-r border-gray-200 flex flex-col p-2">
+                <button
+                    onClick={onToggleCollapse}
+                    className="w-full flex items-center justify-center p-2 mb-4 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                    title="Expandir sidebar"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <button
+                    onClick={onNewSearch}
+                    className="w-full flex items-center justify-center p-2 text-white bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
+                    title="Novo Documento"
+                >
+                    <PlusIcon className="h-5 w-5" />
+                </button>
+                <div className="mt-auto">
+                    <div className="w-10 h-10 mx-auto rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                        {user?.name?.substring(0, 1).toUpperCase() || 'U'}
+                    </div>
+                </div>
+            </aside>
+        );
+    }
+
     return (
         <aside className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col p-4">
-            <div className="flex items-center gap-2 mb-8">
-                <LogoIcon className="h-8 w-8" />
-                <span className="text-xl font-bold text-gray-900">Resea.AI</span>
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-2">
+                    <LogoIcon className="h-8 w-8" />
+                    <span className="text-xl font-bold text-gray-900">SmileAI</span>
+                </div>
+                <button
+                    onClick={onToggleCollapse}
+                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    title="Recolher sidebar"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                </button>
             </div>
             <button
                 onClick={onNewSearch}
@@ -79,17 +120,20 @@ const Sidebar: React.FC<{
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
-            <div className="mt-6">
-                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Recentes</h3>
-                <div className="mt-2 space-y-1">
+            <div className="mt-6 mb-4">
+                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Recentes</h3>
+                <div className="space-y-1">
                     {recents.map((item) => (
                        <HistoryItem key={item.id} item={item} isActive={activeItemId === item.id} onSelect={onSelectHistory} onDelete={onDeleteHistory} />
                     ))}
                 </div>
             </div>
-            <div className="mt-6">
-                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Histórico</h3>
-                <div className="mt-2 space-y-1">
+
+            <div className="border-t border-gray-300 my-4"></div>
+
+            <div className="mt-4 flex-1 overflow-y-auto">
+                <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Histórico</h3>
+                <div className="space-y-1">
                     {historyItems.map((item) => (
                          <HistoryItem key={item.id} item={item} isActive={activeItemId === item.id} onSelect={onSelectHistory} onDelete={onDeleteHistory} />
                     ))}
@@ -238,6 +282,7 @@ const AppContent: React.FC = () => {
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (loading) {
     return (
@@ -335,12 +380,14 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-white text-gray-800 font-sans">
-      <Sidebar 
+      <Sidebar
         onNewSearch={handleNewSearch}
         onSelectHistory={handleSelectHistory}
         onDeleteHistory={handleDeleteHistory}
         activeItemId={getActiveItemId()}
         history={history}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
        />
       <main className="flex-1 flex flex-col">
         {renderContent()}

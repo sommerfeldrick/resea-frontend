@@ -48,9 +48,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await authService.login(email, password);
       setUser(response.user);
-    } finally {
+    } catch (error) {
       setLoading(false);
+      throw error; // Re-throw para que o componente possa tratar
     }
+    setLoading(false);
   };
 
   const logout = async () => {
