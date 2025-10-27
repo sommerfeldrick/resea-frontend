@@ -229,7 +229,7 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading } = useAuth();
-  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation'>('content_generation');
+  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation'>('landing');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
@@ -265,7 +265,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleNewSearch = () => {
-    setView('content_generation');
+    setView('landing');
     setTaskPlan(null);
     setQuery('');
     setCurrentResearch(null);
@@ -309,10 +309,10 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     switch (view) {
-      case 'content_generation':
-        return <ContentGenerationFlow onBack={handleNewSearch} />;
       case 'landing':
         return <LandingPage onPlanGenerated={handlePlanGenerated} />;
+      case 'content_generation':
+        return <ContentGenerationFlow onBack={handleNewSearch} />;
       case 'plan_confirmation':
         return taskPlan ? (
           <PlanConfirmation plan={taskPlan} onConfirm={handleStartResearch} onCancel={handleNewSearch} />
@@ -328,7 +328,7 @@ const AppContent: React.FC = () => {
         }
         return <div className="flex items-center justify-center h-full">Carregando...</div>;
       default:
-        return <ContentGenerationFlow onBack={handleNewSearch} />;
+        return <LandingPage onPlanGenerated={handlePlanGenerated} />;
     }
   }
 
