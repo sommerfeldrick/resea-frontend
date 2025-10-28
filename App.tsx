@@ -3,6 +3,8 @@ import { LandingPage } from './components/LandingPage';
 import { ResearchPage } from './components/ResearchPage';
 import { LoginPage } from './components/LoginPage';
 import { ContentGenerationFlow } from './components/ContentGenerationFlow';
+import { UserDashboard } from './components/UserDashboard';
+import { AuthIntegration } from './components/AuthIntegration';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
@@ -116,11 +118,16 @@ const Sidebar: React.FC<{
             </div>
             <button
                 onClick={onNewSearch}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-800 dark:bg-indigo-600 rounded-lg hover:bg-gray-700 dark:hover:bg-indigo-700 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-800 dark:bg-indigo-600 rounded-lg hover:bg-gray-700 dark:hover:bg-indigo-700 transition-colors mb-4"
             >
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
+
+            {/* Dashboard de Créditos e Plano */}
+            <div className="mb-4 overflow-y-auto flex-shrink-0">
+                <UserDashboard />
+            </div>
 
             {/* Card de Perfil - Fixo no fim da sidebar */}
             <div className="absolute bottom-4 left-4 right-4">
@@ -235,6 +242,22 @@ const AppContent: React.FC = () => {
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [smileaiAuthenticated, setSmileaiAuthenticated] = useState(false);
+
+  // Check for SmileAI token authentication (from URL or localStorage)
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      // Store token for API calls
+      localStorage.setItem('smileai_access_token', token);
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setSmileaiAuthenticated(true);
+    } else if (localStorage.getItem('smileai_access_token')) {
+      setSmileaiAuthenticated(true);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -248,7 +271,15 @@ const AppContent: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        <AuthIntegration
+          onAuthSuccess={() => setSmileaiAuthenticated(true)}
+          onAuthError={(error) => console.error('Auth error:', error)}
+        />
+        <LoginPage />
+      </>
+    );
   }
 
   const handlePlanGenerated = (plan: TaskPlan, userQuery: string) => {

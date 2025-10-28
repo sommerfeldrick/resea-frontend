@@ -44,7 +44,13 @@
       "Bash(git fetch:*)",
       "Bash(npm --prefix ./backend install:*)",
       "Bash(npm --prefix ./backend run build)",
-      "Bash(npm --prefix ./backend run)"
+      "Bash(npm --prefix ./backend run)",
+      "Bash(git submodule:*)",
+      "Bash(/usr/local/bin/npm install @google/generative-ai)",
+      "Bash(/usr/local/bin/npm run)",
+      "Bash(npx tsc:*)",
+      "Bash(git clone:*)",
+      "Bash(rsync:*)"
     ],
     "deny": [],
     "ask": []
