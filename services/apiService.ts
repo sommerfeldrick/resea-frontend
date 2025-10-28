@@ -80,7 +80,7 @@ export async function generateResearchPlan(query: string, template?: string): Pr
 export async function generateTaskPlan(query: string): Promise<TaskPlan> {
   console.log('🔄 Generating task plan via backend...');
 
-  const response = await apiRequest<TaskPlan>('/generate-plan', {
+  const response = await apiRequest<TaskPlan>('/api/generate-plan', {
     method: 'POST',
     body: JSON.stringify({ query })
   });
@@ -95,7 +95,7 @@ export async function generateTaskPlan(query: string): Promise<TaskPlan> {
 export async function generateMindMap(plan: TaskPlan): Promise<MindMapData> {
   console.log('🔄 Generating mind map via backend...');
 
-  const response = await apiRequest<MindMapData>('/generate-mindmap', {
+  const response = await apiRequest<MindMapData>('/api/generate-mindmap', {
     method: 'POST',
     body: JSON.stringify(plan)
   });
@@ -121,7 +121,7 @@ export async function performResearchStep(
   console.log('🔄 Performing research step via backend...', { step });
 
   const response = await apiRequest<{ summary: string; sources: AcademicSource[] }>(
-    '/research-step',
+    '/api/research-step',
     {
       method: 'POST',
       body: JSON.stringify({
@@ -145,7 +145,7 @@ export async function generateOutline(
 ): Promise<string> {
   console.log('🔄 Generating outline via backend...');
 
-  const response = await apiRequest<{ outline: string }>('/generate-outline', {
+  const response = await apiRequest<{ outline: string }>('/api/generate-outline', {
     method: 'POST',
     body: JSON.stringify({
       plan,
@@ -166,7 +166,7 @@ export async function* generateContentStream(
 ): AsyncGenerator<string> {
   console.log('🔄 Starting content generation stream via backend...');
 
-  const url = `${API_BASE_URL}/generate-content`;
+  const url = `${API_BASE_URL}/api/generate-content`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -303,13 +303,13 @@ export async function checkHealth(): Promise<{
   cache: any;
   searchStats: any;
 }> {
-  return apiRequest('/health', { method: 'GET' });
+  return apiRequest('/api/health', { method: 'GET' });
 }
 
 /**
  * Clear cache (admin function)
  */
 export async function clearCache(): Promise<void> {
-  await apiRequest('/cache/clear', { method: 'POST' });
+  await apiRequest('/api/cache/clear', { method: 'POST' });
   console.log('✅ Cache cleared');
 }
