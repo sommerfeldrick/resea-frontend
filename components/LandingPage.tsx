@@ -18,29 +18,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
   const [error, setError] = useState<string | null>(null);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([]);
-  const [wordsUsage, setWordsUsage] = useState(creditService.getWordsUsageSync());
   const { user } = useAuth();
-
-  // Carregar créditos da API quando componente montar
-  useEffect(() => {
-    const loadCredits = async () => {
-      if (user) {
-        try {
-          await creditService.initialize();
-          const usage = await creditService.getWordsUsage();
-          setWordsUsage(usage);
-        } catch (error) {
-          console.error('Erro ao carregar créditos:', error);
-        }
-      }
-    };
-
-    loadCredits();
-
-    // Atualizar a cada 30 segundos
-    const interval = setInterval(loadCredits, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +36,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
       setIsLoading(false);
     }
   };
+
+  // Get credit info from the authenticated user context
+  const remainingWords = user?.remaining_words ? Number(user.remaining_words) : 0;
+  const totalWords = user?.credits || 0;
+  const packageName = user?.plan || '...';
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -77,8 +60,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
                 </svg>
               </button>
               <div className="flex flex-col items-end gap-1">
-                <div className="px-3 py-1 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-bold text-sm shadow-lg" title={`Pacote: ${wordsUsage.packageName.toUpperCase()}`}>
-                  {creditService.formatWords(wordsUsage.remainingWords)} de {creditService.formatWords(wordsUsage.totalWords)}
+                <div className="px-3 py-1 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-bold text-sm shadow-lg" title={`Pacote: ${packageName.toUpperCase()}`}>
+                  {creditService.formatWords(remainingWords)} de {creditService.formatWords(totalWords)}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400">
                   palavras restantes
