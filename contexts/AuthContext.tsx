@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  handleTokenRedirect: (token: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -79,12 +80,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const handleTokenRedirect = async (token: string) => {
+    setLoading(true);
+    try {
+      // Manually set the token that came from the URL
+      localStorage.setItem('smileai_token', token);
+      // With the token now in storage, fetch the user data
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Failed to handle token redirect:', error);
+      authService.clearAuth();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
     refreshUser,
+    handleTokenRedirect,
     isAuthenticated: !!user
   };
 

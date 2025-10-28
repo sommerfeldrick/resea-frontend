@@ -235,29 +235,24 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
 };
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, handleTokenRedirect } = useAuth();
   const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation'>('landing');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [smileaiAuthenticated, setSmileaiAuthenticated] = useState(false);
 
-  // Check for SmileAI token authentication (from URL or localStorage)
-  React.useEffect(() => {
+  // Handle token from redirect URL
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     if (token) {
-      // Store token for API calls
-      localStorage.setItem('smileai_access_token', token);
-      // Clean URL
+      handleTokenRedirect(token);
+      // Clean URL after handling the token
       window.history.replaceState({}, document.title, window.location.pathname);
-      setSmileaiAuthenticated(true);
-    } else if (localStorage.getItem('smileai_access_token')) {
-      setSmileaiAuthenticated(true);
     }
-  }, []);
+  }, [handleTokenRedirect]);
 
   if (loading) {
     return (
@@ -271,15 +266,7 @@ const AppContent: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return (
-      <>
-        <AuthIntegration
-          onAuthSuccess={() => setSmileaiAuthenticated(true)}
-          onAuthError={(error) => console.error('Auth error:', error)}
-        />
-        <LoginPage />
-      </>
-    );
+    return <LoginPage />;
   }
 
   const handlePlanGenerated = (plan: TaskPlan, userQuery: string) => {
