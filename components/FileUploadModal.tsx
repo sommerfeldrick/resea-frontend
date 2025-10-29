@@ -9,6 +9,13 @@ interface FileUploadModalProps {
   allowMultiple?: boolean;
 }
 
+interface UploadingFileInfo {
+  name: string;
+  progress: number;
+  status: 'uploading' | 'done' | 'error';
+  error?: string;
+}
+
 export const FileUploadModal: React.FC<FileUploadModalProps> = ({
   onClose,
   onFilesUploaded,
@@ -16,9 +23,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
   allowMultiple = false
 }) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<
-    Map<string, { name: string; progress: number; status: 'uploading' | 'done' | 'error'; error?: string }>
-  >(new Map());
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, UploadingFileInfo>>(new Map());
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -36,13 +41,15 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
+    // Type assertion necessário - FileList não é array nativo
+    const files = Array.from(e.dataTransfer.files) as File[];
     await handleFiles(files);
   }, []);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const files = Array.from(e.target.files);
+      // Type assertion necessário - FileList não é array nativo
+      const files = Array.from(e.target.files) as File[];
       await handleFiles(files);
     }
   }, []);
@@ -77,10 +84,15 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           file,
           (progress) => {
             setUploadingFiles(prev => {
-              const newMap = new Map(prev);
+              const newMap = new Map<string, UploadingFileInfo>(prev);
               const existing = newMap.get(fileId);
               if (existing) {
-                newMap.set(fileId, { ...existing, progress });
+                newMap.set(fileId, {
+                  name: existing.name,
+                  progress,
+                  status: existing.status,
+                  error: existing.error
+                });
               }
               return newMap;
             });
@@ -124,7 +136,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     onClose();
   };
 
-  const uploadArray = Array.from(uploadingFiles.values());
+  const uploadArray = Array.from(uploadingFiles.values()) as UploadingFileInfo[];
   const hasUploads = uploadArray.length > 0;
   const allDone = hasUploads && uploadArray.every(f => f.status === 'done' || f.status === 'error');
 

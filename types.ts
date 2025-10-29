@@ -31,6 +31,7 @@ export interface AcademicSource {
     year?: string | number;
     summary?: string; // abstract
     sourceProvider: string;
+    citationCount?: number;
 }
 
 export interface ResearchResult {

@@ -3,21 +3,7 @@
  * Cada template possui informações para guiar o usuário em diferentes etapas da escrita acadêmica
  */
 
-import { 
-  DocumentWriteIcon, 
-  SearchIcon, 
-  TargetIcon, 
-  BookOpenIcon, 
-  MicroscopeIcon, 
-  ChartBarIcon, 
-  MicIcon, 
-  TrendingUpIcon, 
-  RefreshCwIcon, 
-  SearchDetailIcon, 
-  LightbulbIcon, 
-  CheckCircleIcon 
-} from '../components/icons';
-
+import React from 'react';
 import { 
   DocumentWriteIcon, 
   SearchIcon, 
