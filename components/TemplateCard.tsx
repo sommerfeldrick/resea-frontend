@@ -35,6 +35,12 @@ const getTemplateIcon = (emoji: string) => {
   return iconMap[emoji] || <span className="text-2xl text-gray-600">{emoji}</span>;
 };
 
+// Renderizar componentes de ícone - versão atualizada para usar componentes React
+const getTemplateIconComponent = (icon: React.FC<{ className?: string }>) => {
+  const Icon = icon;
+  return <Icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />;
+};
+
 export const TemplateCard: React.FC<TemplateCardProps> = ({
   template,
   isFavorite,
@@ -57,7 +63,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
         <div className="p-5 pb-4 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent dark:from-indigo-950/20 dark:via-transparent dark:to-transparent border-b border-gray-100/30 dark:border-slate-700/30">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100/80 to-purple-100/80 dark:from-indigo-900/40 dark:to-purple-900/40 shadow-md shadow-indigo-200/50 dark:shadow-indigo-950/50 ring-1 ring-indigo-200/50 dark:ring-indigo-500/20 group-hover:shadow-lg group-hover:shadow-indigo-300/50 transition-all duration-300">
-              {getTemplateIcon(template.icon)}
+              {getTemplateIconComponent(template.icon)}
             </div>
             <div className="flex flex-col items-end gap-1.5">
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/80 dark:bg-slate-700/50 backdrop-blur-sm rounded-lg shadow-sm ring-1 ring-gray-200/50 dark:ring-slate-600/50 text-xs hover:bg-white/100 dark:hover:bg-slate-700/70 transition-all duration-300">
@@ -143,7 +149,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white shadow-md">
-                  {getTemplateIcon(template.icon)}
+                  {getTemplateIconComponent(template.icon)}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">{template.title}</h3>

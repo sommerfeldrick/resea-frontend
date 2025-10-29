@@ -3,12 +3,42 @@
  * Cada template possui informações para guiar o usuário em diferentes etapas da escrita acadêmica
  */
 
+import { 
+  DocumentWriteIcon, 
+  SearchIcon, 
+  TargetIcon, 
+  BookOpenIcon, 
+  MicroscopeIcon, 
+  ChartBarIcon, 
+  MicIcon, 
+  TrendingUpIcon, 
+  RefreshCwIcon, 
+  SearchDetailIcon, 
+  LightbulbIcon, 
+  CheckCircleIcon 
+} from '../components/icons';
+
+import { 
+  DocumentWriteIcon, 
+  SearchIcon, 
+  TargetIcon, 
+  BookOpenIcon, 
+  MicroscopeIcon, 
+  ChartBarIcon, 
+  MicIcon, 
+  TrendingUpIcon, 
+  RefreshCwIcon, 
+  SearchDetailIcon, 
+  LightbulbIcon, 
+  CheckCircleIcon 
+} from '../components/icons';
+
 export interface AcademicTemplate {
   id: string;
   category: 'introducao' | 'revisao' | 'metodologia' | 'resultados' | 'conclusao' | 'abstract';
   title: string;
   description: string;
-  icon: string;
+  icon: React.FC<{ className?: string }>;
   estimatedTime: number; // em minutos
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   popularityScore: number;
@@ -34,7 +64,7 @@ export const academicTemplates: AcademicTemplate[] = [
     category: 'introducao',
     title: 'Contextualização do Tema',
     description: 'Apresenta o contexto geral e a importância do tema de pesquisa',
-    icon: '📝',
+    icon: DocumentWriteIcon,
     estimatedTime: 5,
     difficulty: 'beginner',
     popularityScore: 95,
@@ -65,7 +95,7 @@ Requisitos:
     category: 'introducao',
     title: 'Introdução com Gap de Pesquisa',
     description: 'Identifica lacunas na literatura e justifica a pesquisa',
-    icon: '🔍',
+    icon: SearchIcon,
     estimatedTime: 7,
     difficulty: 'intermediate',
     popularityScore: 88,
@@ -100,7 +130,7 @@ Requisitos:
     category: 'introducao',
     title: 'Objetivos e Perguntas de Pesquisa',
     description: 'Define objetivos claros e perguntas de pesquisa',
-    icon: '🎯',
+    icon: TargetIcon,
     estimatedTime: 4,
     difficulty: 'beginner',
     popularityScore: 92,
@@ -133,7 +163,7 @@ Requisitos:
     category: 'revisao',
     title: 'Mapeamento Sistemático',
     description: 'Organiza e mapeia a literatura existente sobre o tema',
-    icon: '📚',
+    icon: BookOpenIcon,
     estimatedTime: 10,
     difficulty: 'advanced',
     popularityScore: 85,
@@ -170,7 +200,7 @@ Requisitos:
     category: 'revisao',
     title: 'Análise Crítica de Autores',
     description: 'Compara e analisa criticamente diferentes perspectivas teóricas',
-    icon: '🔬',
+    icon: MicroscopeIcon,
     estimatedTime: 8,
     difficulty: 'advanced',
     popularityScore: 78,
@@ -206,7 +236,7 @@ Requisitos:
     category: 'revisao',
     title: 'Síntese Temática',
     description: 'Sintetiza literatura organizando por temas e subtemas',
-    icon: '📊',
+    icon: ChartBarIcon,
     estimatedTime: 6,
     difficulty: 'intermediate',
     popularityScore: 82,
@@ -247,7 +277,7 @@ Requisitos:
     category: 'metodologia',
     title: 'Metodologia Qualitativa',
     description: 'Descreve abordagem qualitativa de pesquisa',
-    icon: '🎤',
+    icon: MicIcon,
     estimatedTime: 6,
     difficulty: 'intermediate',
     popularityScore: 87,
@@ -293,7 +323,7 @@ Requisitos:
     category: 'metodologia',
     title: 'Metodologia Quantitativa',
     description: 'Descreve abordagem quantitativa com análises estatísticas',
-    icon: '📈',
+    icon: TrendingUpIcon,
     estimatedTime: 6,
     difficulty: 'intermediate',
     popularityScore: 84,
@@ -343,7 +373,7 @@ Requisitos:
     category: 'metodologia',
     title: 'Métodos Mistos',
     description: 'Combina abordagens qualitativas e quantitativas',
-    icon: '🔄',
+    icon: RefreshCwIcon,
     estimatedTime: 8,
     difficulty: 'advanced',
     popularityScore: 76,
@@ -390,7 +420,7 @@ Requisitos:
     category: 'metodologia',
     title: 'Revisão Sistemática',
     description: 'Metodologia para revisão sistemática da literatura',
-    icon: '🔎',
+    icon: SearchDetailIcon,
     estimatedTime: 7,
     difficulty: 'advanced',
     popularityScore: 80,
@@ -443,7 +473,7 @@ Requisitos:
     category: 'resultados',
     title: 'Apresentação de Resultados Descritivos',
     description: 'Apresenta resultados quantitativos de forma clara',
-    icon: '📊',
+    icon: ChartBarIcon,
     estimatedTime: 5,
     difficulty: 'intermediate',
     popularityScore: 85,
@@ -485,7 +515,7 @@ Requisitos:
     category: 'resultados',
     title: 'Discussão e Interpretação',
     description: 'Interpreta resultados e relaciona com a literatura',
-    icon: '💡',
+    icon: LightbulbIcon,
     estimatedTime: 8,
     difficulty: 'advanced',
     popularityScore: 90,
@@ -530,7 +560,7 @@ Requisitos:
     category: 'conclusao',
     title: 'Conclusão e Considerações Finais',
     description: 'Sintetiza o estudo e apresenta conclusões',
-    icon: '✅',
+    icon: CheckCircleIcon,
     estimatedTime: 4,
     difficulty: 'intermediate',
     popularityScore: 93,
@@ -575,7 +605,7 @@ Requisitos:
     category: 'abstract',
     title: 'Resumo/Abstract Estruturado',
     description: 'Cria resumo acadêmico estruturado',
-    icon: '📄',
+    icon: DocumentWriteIcon,
     estimatedTime: 3,
     difficulty: 'beginner',
     popularityScore: 95,
@@ -623,37 +653,37 @@ Forneça também a versão em inglês (Abstract).`
 export const categoryInfo = {
   introducao: {
     label: 'Introdução',
-    icon: '📝',
+    icon: DocumentWriteIcon,
     color: 'indigo',
     description: 'Contextualize seu tema e apresente o problema de pesquisa'
   },
   revisao: {
     label: 'Revisão de Literatura',
-    icon: '📚',
+    icon: BookOpenIcon,
     color: 'purple',
     description: 'Mapeie e analise a literatura existente'
   },
   metodologia: {
     label: 'Metodologia',
-    icon: '🔬',
+    icon: MicroscopeIcon,
     color: 'blue',
     description: 'Descreva os procedimentos metodológicos'
   },
   resultados: {
     label: 'Resultados e Discussão',
-    icon: '📊',
+    icon: ChartBarIcon,
     color: 'green',
     description: 'Apresente e interprete seus achados'
   },
   conclusao: {
     label: 'Conclusão',
-    icon: '✅',
+    icon: CheckCircleIcon,
     color: 'teal',
     description: 'Sintetize e conclua seu trabalho'
   },
   abstract: {
     label: 'Resumo/Abstract',
-    icon: '📄',
+    icon: DocumentWriteIcon,
     color: 'gray',
     description: 'Crie um resumo estruturado do trabalho'
   }

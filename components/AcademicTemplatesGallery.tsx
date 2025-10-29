@@ -73,7 +73,9 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{template.icon}</span>
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-100">
+              {template.icon && React.createElement(template.icon, { className: 'w-6 h-6 text-indigo-600' })}
+            </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">{template.title}</h2>
               <p className="text-sm text-gray-600">{template.description}</p>
