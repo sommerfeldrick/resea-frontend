@@ -118,7 +118,7 @@ class AuthService {
     }
 
     try {
-      // Usa diretamente o endpoint /me que está funcionando
+      // Busca dados básicos do usuário
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -134,9 +134,29 @@ class AuthService {
         return null;
       }
 
-      const { data } = await response.json();
-      this.saveUser(data);
-      return data;
+      const { data: userData } = await response.json();
+
+      // Busca dados de uso (plano, créditos, etc)
+      const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (usageResponse.ok) {
+        const { data: usageData } = await usageResponse.json();
+        // Combina os dados do usuário com os dados de uso
+        const fullUserData = {
+          ...userData,
+          plan: usageData.plan_name,
+          remaining_words: usageData.words_left,
+          credits: usageData.total_words - usageData.words_used
+        };
+        this.saveUser(fullUserData);
+        return fullUserData;
+      }
+
+      // Se não conseguir dados de uso, retorna só os dados básicos
+      this.saveUser(userData);
+      return userData;
     } catch (error) {
       console.error('Get current user error:', error);
       return null;
