@@ -155,15 +155,42 @@ const Sidebar: React.FC<{
                     </button>
 
                     {showProfileMenu && (
-                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-50">
+                        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-3 px-3 z-50 w-56 space-y-3">
+                            {/* Dados do Plano */}
+                            <div className="border-b border-gray-200 dark:border-gray-600 pb-3 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">Plano</span>
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                        {user?.plan_name || 'Básico'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">Créditos</span>
+                                    <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                                        {user?.words_left || user?.credits || '0'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Botão Upgrade */}
+                            <a 
+                                href="https://smileai.com.br/pricing" 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full text-center bg-indigo-600 text-white rounded-lg px-3 py-2 text-xs font-semibold hover:bg-indigo-700 transition-colors"
+                            >
+                                Fazer Upgrade
+                            </a>
+
+                            {/* Botão Sair */}
                             <button
                                 onClick={() => {
                                     setShowProfileMenu(false);
                                     logout();
                                 }}
-                                className="w-full px-4 py-2.5 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center gap-3"
+                                className="w-full px-3 py-2 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center gap-2 rounded-lg transition-colors"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                                 Sair

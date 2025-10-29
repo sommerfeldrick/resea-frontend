@@ -52,10 +52,20 @@ describe('Integração de Serviços', () => {
         }
       };
 
+      const mockUsageData = {
+        words_left: 5000,
+        total_words: 10000,
+        plan_name: 'Premium',
+        plan_status: 'active'
+      };
+
       localStorage.setItem('smileai_token', 'test_token');
       mockFetch.mockImplementation((url) => {
         if (url === `${API_BASE_URL}/api/auth/me`) {
           return Promise.resolve(mockApiResponse({ data: mockData }));
+        }
+        if (url === `${API_BASE_URL}/api/auth/usage-data`) {
+          return Promise.resolve(mockApiResponse({ data: mockUsageData }));
         }
         return Promise.reject(new Error(`URL não mockada: ${url}`));
       });
@@ -65,12 +75,12 @@ describe('Integração de Serviços', () => {
 
       // Primeira chamada
       const firstCall = await authService.getCurrentUser();
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(2); // /me + /usage-data
       expect(firstCall).toBeDefined();
       
       // Segunda chamada
       const secondCall = await authService.getCurrentUser();
-      expect(mockFetch).toHaveBeenCalledTimes(1); // Não deve chamar novamente
+      expect(mockFetch).toHaveBeenCalledTimes(2); // Não deve chamar novamente
       expect(secondCall).toBeDefined();
       expect(firstCall).toEqual(secondCall);
     });
@@ -87,6 +97,13 @@ describe('Integração de Serviços', () => {
         }
       };
 
+      const mockUsageData = {
+        words_left: 5000,
+        total_words: 10000,
+        plan_name: 'Premium',
+        plan_status: 'active'
+      };
+
       let time = 1000;
       vi.spyOn(Date, 'now').mockImplementation(() => time);
       localStorage.setItem('smileai_token', 'test_token');
@@ -95,19 +112,22 @@ describe('Integração de Serviços', () => {
         if (url === `${API_BASE_URL}/api/auth/me`) {
           return Promise.resolve(mockApiResponse({ data: mockData }));
         }
+        if (url === `${API_BASE_URL}/api/auth/usage-data`) {
+          return Promise.resolve(mockApiResponse({ data: mockUsageData }));
+        }
         return Promise.reject(new Error(`URL não mockada: ${url}`));
       });
 
       // Primeira chamada
       const firstCall = await authService.getCurrentUser();
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(2); // /me + /usage-data
       
       // Avança o tempo
       time += 31 * 1000;
       
       // Segunda chamada
       const secondCall = await authService.getCurrentUser();
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(4); // 2 chamadas adicionais
       expect(firstCall).toEqual(secondCall);
     });
 
@@ -121,6 +141,13 @@ describe('Integração de Serviços', () => {
             'gpt-3.5-turbo': { credit: 1000, isUnlimited: false }
           }
         }
+      };
+
+      const mockUsageData = {
+        words_left: 5000,
+        total_words: 10000,
+        plan_name: 'Premium',
+        plan_status: 'active'
       };
 
       localStorage.setItem('smileai_token', 'test_token'); // Define o token
@@ -137,6 +164,9 @@ describe('Integração de Serviços', () => {
         if (url === `${API_BASE_URL}/api/auth/me`) {
           return Promise.resolve(mockApiResponse({ data: mockData }));
         }
+        if (url === `${API_BASE_URL}/api/auth/usage-data`) {
+          return Promise.resolve(mockApiResponse({ data: mockUsageData }));
+        }
         return Promise.reject(new Error(`URL não mockada: ${url} (chamada #${fetchCount})`));
       });
 
@@ -150,7 +180,7 @@ describe('Integração de Serviços', () => {
       
       const queue = JSON.parse(localStorage.getItem('credit_sync_queue') || '[]');
       expect(queue.length).toBe(0);
-      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(3); // /credits/sync, /auth/me, /auth/usage-data
       expect(mockFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/credits/sync`, expect.any(Object));
       expect(mockFetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/auth/me`, expect.any(Object));
     });

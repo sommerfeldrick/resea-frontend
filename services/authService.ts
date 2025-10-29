@@ -178,7 +178,7 @@ class AuthService {
 
       try {
         console.log('Buscando dados do usuário...');
-          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -197,6 +197,23 @@ class AuthService {
 
         const { data: userData } = await response.json();
         
+        // Tenta buscar dados de uso/créditos do endpoint separado
+        let usageData: any = null;
+        try {
+          console.log('Buscando dados de uso...');
+          const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (usageResponse.ok) {
+            const usageJson = await usageResponse.json();
+            usageData = usageJson.data || usageJson;
+            console.log('Dados de uso obtidos:', usageData);
+          }
+        } catch (error) {
+          console.warn('Falha ao buscar dados de uso:', error);
+        }
+        
         // Calcula os totais baseado nos créditos das diferentes APIs
         const totalWords = Math.min(
           Object.entries(userData.entity_credits || {}).reduce((sum: number, [_, provider]) => {
@@ -211,15 +228,19 @@ class AuthService {
         );
 
         // Mapeia os dados do usuário com o plano correto
+        // Prioriza dados de uso se disponíveis, caso contrário usa remaining_words
         const fullUserData: SmileAIUser = {
           ...userData,
-          plan_name: PLAN_DETAILS[userData.plan_type]?.name || 'Básico',
+          plan_name: PLAN_DETAILS[userData.plan_type]?.name || (usageData?.plan_name || 'Básico'),
           role: userData.type, // Mantém a função separada do plano
-          words_left: Number(userData.remaining_words || 0),
-          total_words: totalWords,
-          plan_status: userData.status === 1 ? 'active' : 'inactive'
+          words_left: Number(usageData?.words_left || userData.remaining_words || 0),
+          total_words: usageData?.total_words || totalWords,
+          images_left: usageData?.images_left || userData.remaining_images || 0,
+          total_images: usageData?.total_images || 0,
+          plan_status: usageData?.plan_status || (userData.status === 1 ? 'active' : 'inactive')
         };
 
+        console.log('Dados completos do usuário:', fullUserData);
         this.saveUser(fullUserData);
         return fullUserData;
       } catch (error) {
