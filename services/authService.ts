@@ -147,8 +147,11 @@ class AuthService {
         const fullUserData = {
           ...userData,
           plan: usageData.plan_name,
+          plan_status: usageData.plan_status || 'active',
           remaining_words: usageData.words_left,
-          credits: usageData.total_words - usageData.words_used
+          total_words: usageData.total_words,
+          words_left: usageData.words_left,
+          credits: usageData.total_words
         };
         this.saveUser(fullUserData);
         return fullUserData;
