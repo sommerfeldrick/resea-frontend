@@ -118,19 +118,7 @@ class AuthService {
     }
 
     try {
-      // Primeiro tenta buscar o perfil completo com créditos
-      const profileResponse = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (profileResponse.ok) {
-        const { data } = await profileResponse.json();
-        // O profile pode ter mais informações como credits, remaining_words, etc
-        this.saveUser(data);
-        return data;
-      }
-
-      // Se falhar, tenta o endpoint /me como fallback
+      // Usa diretamente o endpoint /me que está funcionando
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });

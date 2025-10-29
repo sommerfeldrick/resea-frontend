@@ -126,12 +126,12 @@ class SmileAIAPI {
   }
 
   /**
-   * GET /api/auth/profile
+   * GET /api/auth/me
    * Obtém perfil do usuário autenticado
    */
   async getUserProfile(): Promise<UserProfile> {
     try {
-      const response = await this.authenticatedFetch('/api/auth/profile');
+      const response = await this.authenticatedFetch('/api/auth/me');
 
       if (!response.ok) {
         throw new Error(`Erro ao buscar perfil: ${response.statusText}`);
