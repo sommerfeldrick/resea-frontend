@@ -8,10 +8,15 @@ interface UserDashboardProps {
 export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) => {
   const { user, loading, refreshUser } = useAuth();
 
-  // Calcula porcentagens
-  const getUsagePercentage = (used: number, total: number): number => {
-    if (total === 0) return 0;
-    return Math.round((used / total) * 100);
+  // Função para calcular porcentagem de uso com limite máximo de 100%
+  const calculateUsage = (used: number, total: number): number => {
+    if (total === 0 || used === 0) return 0;
+    return Math.min(Math.round((used / total) * 100), 100);
+  };
+
+  // Função para formatar números
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
   };
 
   if (loading) {
@@ -85,8 +90,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
 
   const wordsUsed = usageData.total_words - usageData.words_left;
   const imagesUsed = usageData.total_images - usageData.images_left;
-  const wordsPercentage = getUsagePercentage(wordsUsed, usageData.total_words);
-  const imagesPercentage = getUsagePercentage(imagesUsed, usageData.total_images);
+  const wordsPercentage = calculateUsage(wordsUsed, usageData.total_words);
+  const imagesPercentage = calculateUsage(imagesUsed, usageData.total_images);
 
   return (
     <div className={`bg-gradient-to-br from-indigo-50 to-white rounded-lg shadow-lg p-6 ${className}`}>

@@ -6,6 +6,7 @@ import { ContentGenerationFlow } from './components/ContentGenerationFlow';
 import { UserDashboard } from './components/UserDashboard';
 import { AuthIntegration } from './components/AuthIntegration';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
+import { Header } from './components/Header';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -123,11 +124,6 @@ const Sidebar: React.FC<{
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
-
-            {/* Dashboard de Créditos e Plano */}
-            <div className="mb-4 overflow-y-auto flex-shrink-0">
-                <UserDashboard />
-            </div>
 
             {/* Card de Perfil - Fixo no fim da sidebar */}
             <div className="absolute bottom-4 left-4 right-4">
@@ -364,6 +360,7 @@ const AppContent: React.FC = () => {
         />
       </div>
       <main className={`h-screen flex flex-col ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
+        <Header onBack={() => view !== 'landing' && handleNewSearch()} />
         {renderContent()}
       </main>
     </div>

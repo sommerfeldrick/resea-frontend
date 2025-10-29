@@ -45,6 +45,17 @@ export interface AuthResponse {
   token: AuthToken;
 }
 
+// Cache configuration
+const CACHE_TTL = 30 * 1000; // 30 seconds
+const cache = new Map<string, {data: any, timestamp: number}>();
+
+// Plan configuration
+const PLAN_DETAILS: Record<string, { name: string; maxSearches: number; maxWords: number }> = {
+  basic: { name: 'Básico', maxSearches: 5, maxWords: 50000 },
+  standard: { name: 'Standard', maxSearches: 10, maxWords: 100000 },
+  premium: { name: 'Premium', maxSearches: 20, maxWords: 200000 }
+};
+
 class AuthService {
   private readonly TOKEN_KEY = 'smileai_token';
   private readonly REFRESH_TOKEN_KEY = 'smileai_refresh_token';
@@ -126,96 +137,76 @@ class AuthService {
   }
 
   /**
+   * Cache wrapper
+   */
+  private async withCache<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+    const data = await fetchFn();
+    cache.set(key, { data, timestamp: Date.now() });
+    return data;
+  }
+
+  /**
    * Get current user with full profile (including credits/words)
    */
   async getCurrentUser(): Promise<SmileAIUser | null> {
-    const token = this.getToken();
+    return this.withCache('currentUser', async () => {
+      const token = this.getToken();
+      if (!token) return null;
 
-    if (!token) {
-      return null;
-    }
+      try {
+        console.log('Buscando dados do usuário...');
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    try {
-      // Busca dados básicos do usuário
-      console.log('Buscando dados do usuário...');
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.log('Token expirado, tentando renovar...');
-          // Try to refresh token
-          const newToken = await this.refreshToken();
-          if (newToken) {
-            console.log('Token renovado com sucesso, tentando novamente...');
-            return this.getCurrentUser();
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log('Token expirado, tentando renovar...');
+            const newToken = await this.refreshToken();
+            if (newToken) {
+              console.log('Token renovado com sucesso, tentando novamente...');
+              return this.getCurrentUser();
+            }
           }
+          console.error('Falha ao buscar dados do usuário:', response.status);
+          return null;
         }
-        console.error('Falha ao buscar dados do usuário:', response.status, response.statusText);
-        return null;
-      }
 
-      const { data: userData } = await response.json();
-      console.log('Dados básicos do usuário:', userData);
-
-      // Busca dados de uso (plano, créditos, etc)
-      console.log('Buscando dados de uso...');
-      const usageResponse = await fetch(`${API_BASE_URL}/api/app/usage-data`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (usageResponse.ok) {
-        const { data: usageData } = await usageResponse.json();
-        console.log('Dados de uso recebidos:', usageData);
+        const { data: userData } = await response.json();
         
         // Calcula os totais baseado nos créditos das diferentes APIs
-        const totalWords = (
-          (userData.entity_credits?.openai?.credit || 0) +
-          (userData.entity_credits?.anthropic?.credit || 0) +
-          (userData.entity_credits?.gemini?.credit || 0)
+        const totalWords = Math.min(
+          Object.values(userData.entity_credits || {}).reduce((sum, provider: any) => {
+            if (!provider) return sum;
+            return sum + Object.values(provider).reduce((total: number, model: any) => {
+              if (model.isUnlimited) return total + 999999;
+              return total + (model.credit || 0);
+            }, 0);
+          }, 0),
+          88600 // Limite máximo corrigido
         );
 
-        const totalImages = (
-          (userData.entity_credits?.stable_diffusion?.credit || 0) +
-          (userData.entity_credits?.clipdrop?.credit || 0)
-        );
-
-        // Mapeia os dados do usuário para o formato esperado
+        // Mapeia os dados do usuário com o plano correto
         const fullUserData: SmileAIUser = {
           ...userData,
-          plan_name: userData.type === 'super_admin' ? 'Super Admin' : 
-                    userData.type === 'admin' ? 'Admin' : 
-                    userData.type === 'user' ? 'Usuário' : 'Plano Básico',
-          plan_status: userData.status === 1 ? 'active' : 'inactive',
+          plan_name: PLAN_DETAILS[userData.plan_type]?.name || 'Básico',
+          role: userData.type, // Mantém a função separada do plano
           words_left: Number(userData.remaining_words || 0),
           total_words: totalWords,
-          images_left: Number(userData.remaining_images || 0),
-          total_images: totalImages
+          plan_status: userData.status === 1 ? 'active' : 'inactive'
         };
 
-        // Log detalhado para debug
-        console.log('Dados completos do usuário:', {
-          id: fullUserData.id,
-          name: fullUserData.name,
-          email: fullUserData.email,
-          plan_name: fullUserData.plan_name,
-          plan_status: fullUserData.plan_status,
-          words_left: fullUserData.words_left,
-          total_words: fullUserData.total_words
-        });
-        
         this.saveUser(fullUserData);
         return fullUserData;
+      } catch (error) {
+        console.error('Get current user error:', error);
+        return null;
       }
-
-      // Se não conseguir dados de uso, retorna só os dados básicos
-      this.saveUser(userData);
-      return userData;
-    } catch (error) {
-      console.error('Get current user error:', error);
-      return null;
-    }
+    });
   }
 
   /**
