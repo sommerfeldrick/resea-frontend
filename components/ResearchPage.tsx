@@ -3,17 +3,37 @@ import type { TaskPlan, MindMapData, ResearchResult, CompletedResearch, Academic
 import { generateMindMap, performResearchStep, generateOutline, generateContentStream } from '../services/apiService';
 import ReactFlow, * as Reactflow from 'reactflow';
 
-// Função simples para renderizar markdown básico
+// Função simples para renderizar markdown básico com sanitização
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 const renderMarkdown = (text: string): string => {
   if (!text) return '';
   
-  return text
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br />');
+  // Processar linha por linha para headers corretos
+  const lines = text.split('\n');
+  const processedLines = lines.map(line => {
+    // Headers devem estar no início da linha
+    if (line.startsWith('### ')) {
+      return `<h3>${escapeHtml(line.substring(4))}</h3>`;
+    } else if (line.startsWith('## ')) {
+      return `<h2>${escapeHtml(line.substring(3))}</h2>`;
+    } else if (line.startsWith('# ')) {
+      return `<h1>${escapeHtml(line.substring(2))}</h1>`;
+    }
+    // Processar negrito e itálico com escape
+    return escapeHtml(line)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+  });
+  
+  return processedLines.join('<br />');
 };
 
 type ResearchPageProps = {

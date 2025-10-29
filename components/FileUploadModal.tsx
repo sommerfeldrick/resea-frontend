@@ -41,12 +41,14 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
     e.preventDefault();
     setIsDragging(false);
 
+    // Type assertion necessário - FileList não é array nativo
     const files = Array.from(e.dataTransfer.files) as File[];
     await handleFiles(files);
   }, []);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      // Type assertion necessário - FileList não é array nativo
       const files = Array.from(e.target.files) as File[];
       await handleFiles(files);
     }
