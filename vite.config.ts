@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => {
         }
       },
       build: {
+        sourcemap: true,
         commonjsOptions: {
           transformMixedEsModules: true,
           include: [/node_modules/],
