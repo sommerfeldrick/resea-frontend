@@ -209,6 +209,8 @@ class AuthService {
             const usageJson = await usageResponse.json();
             usageData = usageJson.data || usageJson;
             console.log('Dados de uso obtidos:', usageData);
+          } else {
+            console.warn('Falha ao buscar dados de uso:', usageResponse.status);
           }
         } catch (error) {
           console.warn('Falha ao buscar dados de uso:', error);
@@ -229,13 +231,20 @@ class AuthService {
 
         // Mapeia os dados do usuário com o plano correto
         // Prioriza dados de uso se disponíveis, caso contrário usa remaining_words
+        // Fallback: se nenhum dado de crédito, começa com 100 palavras padrão
+        const wordsLeft = usageData?.words_left !== undefined 
+          ? Number(usageData.words_left)
+          : userData.remaining_words !== undefined
+          ? Number(userData.remaining_words)
+          : totalWords > 0 ? totalWords : 100; // Fallback para 100 se nenhum dado
+        
         const fullUserData: SmileAIUser = {
           ...userData,
           plan_name: PLAN_DETAILS[userData.plan_type]?.name || (usageData?.plan_name || 'Básico'),
           role: userData.type, // Mantém a função separada do plano
-          words_left: Number(usageData?.words_left || userData.remaining_words || 0),
-          total_words: usageData?.total_words || totalWords,
-          images_left: usageData?.images_left || userData.remaining_images || 0,
+          words_left: Math.max(0, wordsLeft), // Garante que não seja negativo
+          total_words: usageData?.total_words || totalWords || 100,
+          images_left: usageData?.images_left !== undefined ? Number(usageData.images_left) : (Number(userData.remaining_images) || 0),
           total_images: usageData?.total_images || 0,
           plan_status: usageData?.plan_status || (userData.status === 1 ? 'active' : 'inactive')
         };
