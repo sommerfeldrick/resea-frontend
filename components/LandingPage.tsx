@@ -9,9 +9,10 @@ import type { UploadedFile } from '../types/templates';
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
+  onBack?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onBack }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +39,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 transition-colors">
-      <header className="p-4 sm:p-6 flex justify-end bg-gray-50 dark:bg-gray-900">
+      <header className="p-4 sm:p-6 flex justify-end items-center gap-4 bg-gray-50 dark:bg-gray-900">
           <div className="flex items-center gap-4">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  title="Voltar ao dashboard"
+                  className="p-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+              )}
               <button
                 onClick={() => {
                   const html = document.documentElement;

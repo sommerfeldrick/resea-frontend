@@ -177,7 +177,7 @@ class AuthService {
       if (!token) return null;
 
       try {
-        console.log('Buscando dados do usuário...');
+        console.log('🔐 [RESEA-CREDITOS] Iniciando busca de dados do usuário...');
         const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -320,7 +320,7 @@ class AuthService {
           plan_status: usageData?.plan_status || (userData.status === 1 ? 'active' : 'inactive')
         };
 
-        console.log(`\n✅ RESULTADO FINAL (fonte: ${creditsSource}):`);
+        console.log(`\n✅ [RESEA-CREDITOS] RESULTADO FINAL (fonte: ${creditsSource}):`);
         console.log({
           name: fullUserData.name,
           email: fullUserData.email,
@@ -329,6 +329,7 @@ class AuthService {
           total_words: fullUserData.total_words,
           source: creditsSource
         });
+        console.log('[RESEA-CREDITOS] Procure por estes logs para diagnosticar créditos\n');
 
         this.saveUser(fullUserData);
         return fullUserData;

@@ -6,7 +6,6 @@ import { ContentGenerationFlow } from './components/ContentGenerationFlow';
 import { UserDashboard } from './components/UserDashboard';
 import { AuthIntegration } from './components/AuthIntegration';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
-import { Header } from './components/Header';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -387,7 +386,6 @@ const AppContent: React.FC = () => {
         />
       </div>
       <main className={`h-screen flex flex-col ${sidebarCollapsed ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
-        <Header onBack={() => view !== 'landing' && handleNewSearch()} />
         {renderContent()}
       </main>
     </div>
