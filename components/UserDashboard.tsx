@@ -45,13 +45,18 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
 
   // Usando os dados diretamente do user
   const usageData = {
-    words_left: Number(user.words_left || 0),
-    total_words: Number(user.total_words || 0),
-    images_left: 0,
-    total_images: 0,
-    plan_name: user.plan_name || 'Não informado',
-    plan_status: user.plan_status || 'active',
+    words_left: Number(user.remaining_words || 0),
+    total_words: user.entity_credits?.openai?.openai?.credit || 0,
+    images_left: Number(user.remaining_images || 0),
+    total_images: user.entity_credits?.stable_diffusion?.stable_diffusion?.credit || 0,
+    plan_name: user.type === 'super_admin' ? 'Super Admin' : 
+              user.type === 'admin' ? 'Admin' : 
+              user.type === 'user' ? 'Usuário' : 'Plano Básico',
+    plan_status: user.status === 1 ? 'active' : 'inactive',
   };
+
+  // Log detalhado dos dados de uso
+  console.log('Dados de uso processados:', usageData);
 
   const wordsUsed = usageData.total_words - usageData.words_left;
   const imagesUsed = usageData.total_images - usageData.images_left;

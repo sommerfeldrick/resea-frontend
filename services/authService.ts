@@ -13,8 +13,20 @@ export interface SmileAIUser {
   plan_status?: string;
   words_left?: number;
   total_words?: number;
+  images_left?: number;
+  total_images?: number;
   credits?: number;
   type?: string;
+  status?: number;
+  remaining_words?: string;
+  remaining_images?: string;
+  entity_credits?: {
+    openai?: { openai?: { credit: number } };
+    stable_diffusion?: { stable_diffusion?: { credit: number } };
+    anthropic?: any;
+    gemini?: any;
+    clipdrop?: any;
+  };
 }
 
 export interface AuthToken {
@@ -153,13 +165,17 @@ class AuthService {
         const { data: usageData } = await usageResponse.json();
         console.log('Dados de uso recebidos:', usageData);
         
-        // Combina os dados do usuário com os dados de uso
+        // Mapeia os dados do usuário para o formato esperado
         const fullUserData: SmileAIUser = {
           ...userData,
-          plan_name: usageData.plan_name || 'Não informado',
-          plan_status: usageData.plan_status || 'active',
-          words_left: usageData.words_left || 0,
-          total_words: usageData.total_words || 0
+          plan_name: userData.type === 'super_admin' ? 'Super Admin' : 
+                    userData.type === 'admin' ? 'Admin' : 
+                    userData.type === 'user' ? 'Usuário' : 'Plano Básico',
+          plan_status: userData.status === 1 ? 'active' : 'inactive',
+          words_left: Number(userData.remaining_words || 0),
+          total_words: userData.entity_credits?.openai?.openai?.credit || 0,
+          images_left: Number(userData.remaining_images || 0),
+          total_images: userData.entity_credits?.stable_diffusion?.stable_diffusion?.credit || 0
         };
 
         // Log detalhado para debug
