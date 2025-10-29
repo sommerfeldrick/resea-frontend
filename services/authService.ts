@@ -139,7 +139,7 @@ class AuthService {
       const { data: userData } = await response.json();
 
       // Busca dados de uso (plano, créditos, etc)
-      const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
+      const usageResponse = await fetch(`${API_BASE_URL}/api/app/usage-data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -151,9 +151,8 @@ class AuthService {
           ...userData,
           plan_name: usageData.plan_name,
           plan_status: usageData.plan_status || 'active',
-          words_left: usageData.words_left,
-          total_words: usageData.total_words,
-          credits: usageData.total_words
+          words_left: usageData.words_left || 0,
+          total_words: usageData.total_words || 0
         };
 
         // Log para debug
