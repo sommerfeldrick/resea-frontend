@@ -2,7 +2,19 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { TaskPlan, MindMapData, ResearchResult, CompletedResearch, AcademicSource } from '../types';
 import { generateMindMap, performResearchStep, generateOutline, generateContentStream } from '../services/apiService';
 import ReactFlow, * as Reactflow from 'reactflow';
-import { marked } from 'https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js';
+
+// Função simples para renderizar markdown básico
+const renderMarkdown = (text: string): string => {
+  if (!text) return '';
+  
+  return text
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br />');
+};
 
 type ResearchPageProps = {
   initialData?: CompletedResearch;
@@ -92,7 +104,7 @@ const ParsedContent: React.FC<{ content: string, sources: AcademicSource[] }> = 
                     return <CitationPopup key={index} text={part.text} source={part.source} />;
                 }
                 if (part.type === 'text') {
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: marked(part.content) }} />;
+                    return <span key={index} dangerouslySetInnerHTML={{ __html: renderMarkdown(part.content) }} />;
                 }
                 // Fallback for invalid citation
                 return <span key={index}>({part.text || 'citação inválida'})</span>;
@@ -231,7 +243,7 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ initialData, taskPla
             ) : <div className="mt-6 text-center text-gray-500">O documento final aparecerá aqui...</div>;
         case 'outline':
             return outline ? (
-                 <div className="mt-6 prose prose-indigo max-w-none p-6 border rounded-lg bg-white" dangerouslySetInnerHTML={{ __html: marked(outline) }} />
+                 <div className="mt-6 prose prose-indigo max-w-none p-6 border rounded-lg bg-white" dangerouslySetInnerHTML={{ __html: renderMarkdown(outline) }} />
             ) : <div className="mt-6 text-center text-gray-500">O esboço do documento aparecerá aqui...</div>;
         case 'research':
             return researchResults.length > 0 ? (
@@ -239,7 +251,7 @@ export const ResearchPage: React.FC<ResearchPageProps> = ({ initialData, taskPla
                      {researchResults.map((result, i) => (
                          <div key={i} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                              <h3 className="font-semibold text-indigo-700">{result.query}</h3>
-                             <div className="text-sm text-gray-700 mt-2 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: marked(result.summary) }}/>
+                             <div className="text-sm text-gray-700 mt-2 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(result.summary) }}/>
                              <div className="mt-3 space-y-2">
                                  {result.sources.map((source, j) => (
                                      <div key={j} className="text-xs p-2 border-l-2 border-indigo-200 bg-white rounded-r-md">
