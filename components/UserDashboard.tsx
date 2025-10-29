@@ -44,11 +44,23 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
   console.log('Dados do usuário no dashboard:', user);
 
   // Usando os dados diretamente do user
+  // Calcula os totais baseado nos créditos das diferentes APIs
+  const totalWords = (
+    (user.entity_credits?.openai?.credit || 0) +
+    (user.entity_credits?.anthropic?.credit || 0) +
+    (user.entity_credits?.gemini?.credit || 0)
+  );
+
+  const totalImages = (
+    (user.entity_credits?.stable_diffusion?.credit || 0) +
+    (user.entity_credits?.clipdrop?.credit || 0)
+  );
+
   const usageData = {
     words_left: Number(user.remaining_words || 0),
-    total_words: user.entity_credits?.openai?.openai?.credit || 0,
+    total_words: totalWords,
     images_left: Number(user.remaining_images || 0),
-    total_images: user.entity_credits?.stable_diffusion?.stable_diffusion?.credit || 0,
+    total_images: totalImages,
     plan_name: user.type === 'super_admin' ? 'Super Admin' : 
               user.type === 'admin' ? 'Admin' : 
               user.type === 'user' ? 'Usuário' : 'Plano Básico',
@@ -57,6 +69,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
 
   // Log detalhado dos dados de uso
   console.log('Dados de uso processados:', usageData);
+  console.log('Entity Credits detalhados:', user.entity_credits);
 
   const wordsUsed = usageData.total_words - usageData.words_left;
   const imagesUsed = usageData.total_images - usageData.images_left;

@@ -21,11 +21,11 @@ export interface SmileAIUser {
   remaining_words?: string;
   remaining_images?: string;
   entity_credits?: {
-    openai?: { openai?: { credit: number } };
-    stable_diffusion?: { stable_diffusion?: { credit: number } };
-    anthropic?: any;
-    gemini?: any;
-    clipdrop?: any;
+    openai?: { credit: number };
+    stable_diffusion?: { credit: number };
+    anthropic?: { credit: number };
+    gemini?: { credit: number };
+    clipdrop?: { credit: number };
   };
 }
 
@@ -165,6 +165,18 @@ class AuthService {
         const { data: usageData } = await usageResponse.json();
         console.log('Dados de uso recebidos:', usageData);
         
+        // Calcula os totais baseado nos créditos das diferentes APIs
+        const totalWords = (
+          (userData.entity_credits?.openai?.credit || 0) +
+          (userData.entity_credits?.anthropic?.credit || 0) +
+          (userData.entity_credits?.gemini?.credit || 0)
+        );
+
+        const totalImages = (
+          (userData.entity_credits?.stable_diffusion?.credit || 0) +
+          (userData.entity_credits?.clipdrop?.credit || 0)
+        );
+
         // Mapeia os dados do usuário para o formato esperado
         const fullUserData: SmileAIUser = {
           ...userData,
@@ -173,9 +185,9 @@ class AuthService {
                     userData.type === 'user' ? 'Usuário' : 'Plano Básico',
           plan_status: userData.status === 1 ? 'active' : 'inactive',
           words_left: Number(userData.remaining_words || 0),
-          total_words: userData.entity_credits?.openai?.openai?.credit || 0,
+          total_words: totalWords,
           images_left: Number(userData.remaining_images || 0),
-          total_images: userData.entity_credits?.stable_diffusion?.stable_diffusion?.credit || 0
+          total_images: totalImages
         };
 
         // Log detalhado para debug
