@@ -1,8 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./{App,index}.tsx", "./{components,contexts,data,hooks,services,styles,types}/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./index.html",
+    "./App.tsx",
+    "./index.tsx",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./contexts/**/*.{js,ts,jsx,tsx}",
+    "./hooks/**/*.{js,ts,jsx,tsx}",
+    "./services/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
+    "./styles/**/*.{css,js,ts,jsx,tsx}"
+  ],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: 'var(--color-primary)',
+        'primary-dark': 'var(--color-primary-dark)',
+        secondary: 'var(--color-secondary)',
+        success: 'var(--color-success)',
+        danger: 'var(--color-danger)'
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif']
+      }
+    }
   },
-  plugins: [],
+  plugins: []
 }
