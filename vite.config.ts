@@ -26,6 +26,12 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        commonjsOptions: {
+          transformMixedEsModules: true,
+          include: [/node_modules/],
+        },
       }
     };
 });
