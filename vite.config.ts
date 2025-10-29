@@ -28,6 +28,11 @@ export default defineConfig(({ mode }) => {
           stream: 'stream-browserify',
           buffer: 'buffer'
         }
+      },
+      build: {
+        commonjsOptions: {
+          include: [/node_modules/],
+        },
       }
     };
 });
