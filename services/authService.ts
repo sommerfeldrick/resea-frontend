@@ -121,42 +121,57 @@ class AuthService {
 
     try {
       // Busca dados básicos do usuário
+      console.log('Buscando dados do usuário...');
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!response.ok) {
         if (response.status === 401) {
+          console.log('Token expirado, tentando renovar...');
           // Try to refresh token
           const newToken = await this.refreshToken();
           if (newToken) {
+            console.log('Token renovado com sucesso, tentando novamente...');
             return this.getCurrentUser();
           }
         }
+        console.error('Falha ao buscar dados do usuário:', response.status, response.statusText);
         return null;
       }
 
       const { data: userData } = await response.json();
+      console.log('Dados básicos do usuário:', userData);
 
       // Busca dados de uso (plano, créditos, etc)
+      console.log('Buscando dados de uso...');
       const usageResponse = await fetch(`${API_BASE_URL}/api/app/usage-data`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (usageResponse.ok) {
         const { data: usageData } = await usageResponse.json();
+        console.log('Dados de uso recebidos:', usageData);
         
         // Combina os dados do usuário com os dados de uso
         const fullUserData: SmileAIUser = {
           ...userData,
-          plan_name: usageData.plan_name,
+          plan_name: usageData.plan_name || 'Não informado',
           plan_status: usageData.plan_status || 'active',
           words_left: usageData.words_left || 0,
           total_words: usageData.total_words || 0
         };
 
-        // Log para debug
-        console.log('Dados do usuário atualizados:', fullUserData);
+        // Log detalhado para debug
+        console.log('Dados completos do usuário:', {
+          id: fullUserData.id,
+          name: fullUserData.name,
+          email: fullUserData.email,
+          plan_name: fullUserData.plan_name,
+          plan_status: fullUserData.plan_status,
+          words_left: fullUserData.words_left,
+          total_words: fullUserData.total_words
+        });
         
         this.saveUser(fullUserData);
         return fullUserData;

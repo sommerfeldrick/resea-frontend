@@ -299,7 +299,7 @@ function MyApp() {
 
 | Endpoint | Método | Descrição | Arquivo de Referência |
 |----------|--------|-----------|----------------------|
-| `/api/app/usage-data` | GET | Busca créditos e plano | `smileaiAPI.ts:87` |
+| `/api/app/usage-data` | GET | Busca dados de uso e plano | `smileaiAPI.ts:87` |
 | `/api/auth/profile` | GET | Perfil do usuário | `smileaiAPI.ts:109` |
 | `/api/aiwriter/generate` | POST | Gera conteúdo de texto | `smileaiAPI.ts:131` |
 | `/api/aiimage/generate-image` | POST | Gera imagem | `smileaiAPI.ts:174` |

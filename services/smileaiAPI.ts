@@ -105,12 +105,12 @@ class SmileAIAPI {
   }
 
   /**
-   * GET /api/auth/usage-data
+   * GET /api/app/usage-data
    * Obtém dados de uso e plano do usuário
    */
   async getUserUsageData(): Promise<UserUsageData> {
     try {
-      const response = await this.authenticatedFetch('/api/auth/usage-data');
+      const response = await this.authenticatedFetch('/api/app/usage-data');
 
       if (!response.ok) {
         throw new Error(`Erro ao buscar dados de uso: ${response.statusText}`);
