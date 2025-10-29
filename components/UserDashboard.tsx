@@ -40,14 +40,17 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
     );
   }
 
-  // Adaptando os dados do 'user' do contexto para a estrutura que o componente espera
+  // Log para debug
+  console.log('Dados do usuário no dashboard:', user);
+
+  // Usando os dados diretamente do user
   const usageData = {
-    words_left: Number(user.remaining_words || 0),
-    total_words: user.credits || 0,
-    images_left: 0, // Dado não disponível no user object do contexto
-    total_images: 0, // Dado não disponível no user object do contexto
-    plan_name: user.plan || 'Não informado',
-    plan_status: 'active', // Assumindo ativo se o usuário está logado
+    words_left: Number(user.words_left || 0),
+    total_words: Number(user.total_words || 0),
+    images_left: 0,
+    total_images: 0,
+    plan_name: user.plan_name || 'Não informado',
+    plan_status: user.plan_status || 'active',
   };
 
   const wordsUsed = usageData.total_words - usageData.words_left;

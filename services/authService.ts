@@ -9,10 +9,12 @@ export interface SmileAIUser {
   name: string;
   email: string;
   avatar?: string;
-  plan?: string;
+  plan_name?: string;
+  plan_status?: string;
+  words_left?: number;
+  total_words?: number;
   credits?: number;
-  remaining_words?: string | number; // Palavras restantes do plano
-  type?: string; // Tipo de usuário (admin, user, etc)
+  type?: string;
 }
 
 export interface AuthToken {
@@ -143,16 +145,20 @@ class AuthService {
 
       if (usageResponse.ok) {
         const { data: usageData } = await usageResponse.json();
+        
         // Combina os dados do usuário com os dados de uso
-        const fullUserData = {
+        const fullUserData: SmileAIUser = {
           ...userData,
-          plan: usageData.plan_name,
+          plan_name: usageData.plan_name,
           plan_status: usageData.plan_status || 'active',
-          remaining_words: usageData.words_left,
-          total_words: usageData.total_words,
           words_left: usageData.words_left,
+          total_words: usageData.total_words,
           credits: usageData.total_words
         };
+
+        // Log para debug
+        console.log('Dados do usuário atualizados:', fullUserData);
+        
         this.saveUser(fullUserData);
         return fullUserData;
       }
