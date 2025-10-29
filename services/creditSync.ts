@@ -48,10 +48,22 @@ class CreditService {
     
     const operation = queue[0];
     try {
-      await this.synchronizeCredits(operation.credits);
+      await authService.apiRequest('/api/credits/sync', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          credits_used: operation.credits,
+          domain: window.location.hostname,
+          timestamp: new Date().toISOString()
+        })
+      });
+
       // Se sucesso, remove da fila
       queue.shift();
       this.saveQueue(queue);
+      
+      // Limpa o cache e força atualização do usuário
+      (authService as any).clearCache('currentUser');
+      await authService.getCurrentUser();
     } catch (error) {
       operation.attempts++;
       if (operation.attempts < this.MAX_RETRIES) {

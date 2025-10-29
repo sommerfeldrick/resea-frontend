@@ -2,7 +2,8 @@
  * Authentication Service - SmileAI Integration
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// URL base for API requests
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export interface SmileAIUser {
   id: number;
@@ -48,7 +49,10 @@ export interface AuthResponse {
 
 // Cache configuration
 const CACHE_TTL = 30 * 1000; // 30 seconds
-const cache = new Map<string, {data: any, timestamp: number}>();
+// Cache global compartilhado entre todas as instâncias
+if (!(global as any).cache) {
+  (global as any).cache = new Map<string, {data: any, timestamp: number}>();
+}
 
 // Plan configuration
 const PLAN_DETAILS: Record<string, { name: string; maxSearches: number; maxWords: number }> = {
@@ -141,12 +145,26 @@ class AuthService {
    * Cache wrapper
    */
   private async withCache<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
+    const cache = (global as any).cache;
     const cached = cache.get(key);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    const now = Date.now();
+
+    // Se há dados em cache e eles são válidos
+    if (cached && now - cached.timestamp < CACHE_TTL) {
+      console.log('Usando cache para:', key);
       return cached.data;
     }
+
+    // Caso contrário, buscar dados novos
+    console.log('Buscando dados novos para:', key);
     const data = await fetchFn();
-    cache.set(key, { data, timestamp: Date.now() });
+
+    // Armazenar no cache apenas se não for null
+    if (data !== null) {
+      console.log('Armazenando em cache:', key, data);
+      cache.set(key, { data, timestamp: now });
+    }
+
     return data;
   }
 
@@ -160,7 +178,7 @@ class AuthService {
 
       try {
         console.log('Buscando dados do usuário...');
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -271,6 +289,18 @@ class AuthService {
   }
 
   /**
+   * Clear cache for a specific key or all cache if no key is provided
+   */
+  private clearCache(key?: string): void {
+    const cache = (global as any).cache;
+    if (key) {
+      cache.delete(key);
+    } else {
+      cache.clear();
+    }
+  }
+
+  /**
    * Get stored token
    */
   getToken(): string | null {
@@ -308,6 +338,28 @@ class AuthService {
   /**
    * Make authenticated API request
    */
+  /**
+   * Get available credits for a user
+   */
+  async getAvailableCredits(user: SmileAIUser): Promise<number> {
+    // Se não tem dados de créditos, retorna 0
+    if (!user.entity_credits) return 0;
+
+    // Calcula o total baseado nos créditos das diferentes APIs
+    const totalCredits = Object.entries(user.entity_credits).reduce((sum: number, [_, provider]) => {
+      if (!provider || typeof provider !== 'object') return sum;
+      
+      return sum + Object.values(provider as Record<string, { credit: number, isUnlimited: boolean }>)
+        .reduce((total: number, model) => {
+          if (model.isUnlimited) return total + 88600; // Créditos ilimitados = máximo permitido
+          return total + (model.credit || 0);
+        }, 0);
+    }, 0);
+
+    // Retorna o mínimo entre o total calculado e o limite máximo
+    return Math.min(totalCredits, 88600);
+  }
+
   async apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}

@@ -29,7 +29,8 @@ class SearchLimitService {
   
   private getMaxSearchesByPlan(): number {
     const user = authService.getUser();
-    switch(user?.plan_type) {
+    const planInfo = user?.plan_type || 'basic';
+    switch(planInfo) {
       case 'premium': return 20;
       case 'standard': return 10;
       default: return 5;
