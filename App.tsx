@@ -174,7 +174,7 @@ const Sidebar: React.FC<{
 
                             {/* Botão Upgrade */}
                             <a 
-                                href="https://smileai.com.br/pricing" 
+                                href="https://smileai.com.br/dashboard" 
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="block w-full text-center bg-indigo-600 text-white rounded-lg px-3 py-2 text-xs font-semibold hover:bg-indigo-700 transition-colors"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SparkleIcon, PaperclipIcon } from './icons';
 import { generateTaskPlan } from '../services/apiService';
 import type { TaskPlan } from '../types';
@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { AcademicTemplatesGallery } from './AcademicTemplatesGallery';
 import { FileUploadModal } from './FileUploadModal';
 import type { UploadedFile } from '../types/templates';
-import { creditService } from '../services/creditService';
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
@@ -37,11 +36,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
     }
   };
 
-  // Get credit info from the authenticated user context
-  const remainingWords = user?.remaining_words ? Number(user.remaining_words) : 0;
-  const totalWords = user?.credits || 0;
-  const packageName = user?.plan || '...';
-
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 transition-colors">
       <header className="p-4 sm:p-6 flex justify-end bg-gray-50 dark:bg-gray-900">
@@ -59,24 +53,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated }) => 
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
               </button>
-              <div className="flex flex-col items-end gap-1">
-                <div className="px-3 py-1 rounded-full bg-indigo-600 dark:bg-indigo-500 text-white font-bold text-sm shadow-lg" title={`Pacote: ${packageName.toUpperCase()}`}>
-                  {creditService.formatWords(remainingWords)} de {creditService.formatWords(totalWords)}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  palavras restantes
-                </div>
-              </div>
-              <button
-                onClick={() => window.location.href = 'https://smileai.com.br/dashboard'}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center gap-2"
-                title="Voltar ao Dashboard"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Voltar
-              </button>
+
           </div>
       </header>
       <main className="flex-grow flex items-center justify-center px-6 py-12 bg-gray-50 dark:bg-gray-900">

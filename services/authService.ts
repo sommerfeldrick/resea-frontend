@@ -381,6 +381,21 @@ class AuthService {
     return Math.min(totalCredits, 88600);
   }
 
+  /**
+   * Public method to clear authentication data
+   */
+  clearAuthData(): void {
+    this.clearAuth();
+    this.clearCache();
+  }
+
+  /**
+   * Public method to clear user cache
+   */
+  clearUserCache(): void {
+    this.clearCache('currentUser');
+  }
+
   async apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}

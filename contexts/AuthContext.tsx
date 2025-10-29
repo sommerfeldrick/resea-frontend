@@ -85,12 +85,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       // Manually set the token that came from the URL
       localStorage.setItem('smileai_token', token);
+      // Clear any cached user data from previous sessions
+      authService.clearUserCache();
       // With the token now in storage, fetch the user data
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
     } catch (error) {
       console.error('Failed to handle token redirect:', error);
-      authService.clearAuth();
+      authService.clearAuthData();
       setUser(null);
     } finally {
       setLoading(false);

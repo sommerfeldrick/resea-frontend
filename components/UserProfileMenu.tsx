@@ -49,14 +49,14 @@ export const UserProfileMenu: React.FC = () => {
               </div>
 
               <div className="pt-2">
-                <a 
-                  href="https://smileai.com.br/pricing" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-center bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  Fazer Upgrade
-                </a>
+                              <a 
+                href="https://smileai.com.br/dashboard" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center bg-indigo-600 text-white rounded-lg px-3 py-2 text-xs font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Fazer Upgrade
+              </a>
               </div>
             </div>
           </div>

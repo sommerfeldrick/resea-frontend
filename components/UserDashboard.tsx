@@ -154,7 +154,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
       {/* Botão de Upgrade (sempre visível) */}
       <div className="mt-6">
         <a
-          href="https://smileai.com.br/pricing"
+          href="https://smileai.com.br/dashboard"
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
