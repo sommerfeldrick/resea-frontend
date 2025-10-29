@@ -10,6 +10,7 @@ export interface SmileAIUser {
   email: string;
   avatar?: string;
   plan_name?: string;
+  plan_type?: 'basic' | 'standard' | 'premium';
   plan_status?: string;
   words_left?: number;
   total_words?: number;
@@ -180,12 +181,13 @@ class AuthService {
         
         // Calcula os totais baseado nos créditos das diferentes APIs
         const totalWords = Math.min(
-          Object.values(userData.entity_credits || {}).reduce((sum, provider: any) => {
-            if (!provider) return sum;
-            return sum + Object.values(provider).reduce((total: number, model: any) => {
-              if (model.isUnlimited) return total + 999999;
-              return total + (model.credit || 0);
-            }, 0);
+          Object.entries(userData.entity_credits || {}).reduce((sum: number, [_, provider]) => {
+            if (!provider || typeof provider !== 'object') return sum;
+            return sum + Object.values(provider as Record<string, { credit: number; isUnlimited: boolean }>)
+              .reduce((total: number, model) => {
+                if (model.isUnlimited) return total + 999999;
+                return total + (model.credit || 0);
+              }, 0);
           }, 0),
           88600 // Limite máximo corrigido
         );

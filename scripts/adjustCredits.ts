@@ -18,12 +18,13 @@ async function adjustUserCredits() {
 
     // Calcula os totais baseado nos créditos das diferentes APIs
     const totalWords = Math.min(
-      Object.values(user.entity_credits || {}).reduce((sum, provider: any) => {
-        if (!provider) return sum;
-        return sum + Object.values(provider).reduce((total: number, model: any) => {
-          if (model.isUnlimited) return total + MAX_CREDITS;
-          return total + (model.credit || 0);
-        }, 0);
+      Object.entries(user.entity_credits || {}).reduce((sum: number, [_, provider]) => {
+        if (!provider || typeof provider !== 'object') return sum;
+        return sum + Object.values(provider as Record<string, { credit: number; isUnlimited: boolean }>)
+          .reduce((total: number, model) => {
+            if (model.isUnlimited) return total + MAX_CREDITS;
+            return total + (model.credit || 0);
+          }, 0);
       }, 0),
       MAX_CREDITS // Aplica o limite máximo
     );
