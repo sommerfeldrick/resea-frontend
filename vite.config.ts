@@ -20,24 +20,13 @@ export default defineConfig(({ mode }) => {
       define: {
         // Remove API key exposure - now handled by backend
         'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://localhost:3001/api'),
+        'global': 'globalThis',
       },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
           stream: 'stream-browserify',
           buffer: 'buffer'
-        }
-      },
-      optimizeDeps: {
-        esbuildOptions: {
-          define: {
-            global: 'globalThis'
-          },
-          plugins: [
-            NodeGlobalsPolyfillPlugin({
-              buffer: true
-            })
-          ]
         }
       }
     };
