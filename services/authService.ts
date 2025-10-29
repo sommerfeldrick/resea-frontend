@@ -196,11 +196,20 @@ class AuthService {
         }
 
         const { data: userData } = await response.json();
+        console.log('📦 User data obtido:', {
+          id: userData.id,
+          name: userData.name,
+          remaining_words: userData.remaining_words,
+          entity_credits: !!userData.entity_credits
+        });
         
-        // Tenta buscar dados de uso/créditos do endpoint separado
+        // Estratégia de múltiplas tentativas para obter créditos
         let usageData: any = null;
+        let creditsSource = 'nenhum';
+
+        // Tentativa 1: /api/auth/usage-data (endpoint de uso)
         try {
-          console.log('Buscando dados de uso...');
+          console.log('🔍 Tentativa 1: Buscando /api/auth/usage-data...');
           const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -208,12 +217,74 @@ class AuthService {
           if (usageResponse.ok) {
             const usageJson = await usageResponse.json();
             usageData = usageJson.data || usageJson;
-            console.log('Dados de uso obtidos:', usageData);
+            creditsSource = 'usage-data';
+            console.log('✅ Dados de usage-data obtidos:', usageData);
           } else {
-            console.warn('Falha ao buscar dados de uso:', usageResponse.status);
+            console.warn('⚠️ /api/auth/usage-data retornou status:', usageResponse.status);
           }
         } catch (error) {
-          console.warn('Falha ao buscar dados de uso:', error);
+          console.warn('⚠️ Erro ao buscar /api/auth/usage-data:', error);
+        }
+
+        // Se não conseguiu do usage-data, tenta /api/auth/profile
+        if (!usageData || usageData.words_left === undefined) {
+          try {
+            console.log('🔍 Tentativa 2: Buscando /api/auth/profile...');
+            const profileResponse = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (profileResponse.ok) {
+              const profileJson = await profileResponse.json();
+              const profileData = profileJson.data || profileJson;
+              if (profileData.words_left !== undefined) {
+                usageData = profileData;
+                creditsSource = 'profile';
+                console.log('✅ Dados de profile obtidos:', usageData);
+              }
+            } else {
+              console.warn('⚠️ /api/auth/profile retornou status:', profileResponse.status);
+            }
+          } catch (error) {
+            console.warn('⚠️ Erro ao buscar /api/auth/profile:', error);
+          }
+        }
+
+        // Se ainda não tem usageData, tenta extrair de userData.entity_credits
+        if (!usageData) {
+          console.log('🔍 Tentativa 3: Extraindo de entity_credits...');
+          if (userData.entity_credits && typeof userData.entity_credits === 'object') {
+            creditsSource = 'entity_credits';
+            usageData = {
+              words_left: Math.min(
+                Object.entries(userData.entity_credits).reduce((sum: number, [_, provider]) => {
+                  if (!provider || typeof provider !== 'object') return sum;
+                  return sum + Object.values(provider as Record<string, { credit: number, isUnlimited: boolean }>)
+                    .reduce((total: number, model) => {
+                      if (model.isUnlimited) return total + 999999;
+                      return total + (model.credit || 0);
+                    }, 0);
+                }, 0),
+                88600
+              )
+            };
+            console.log('✅ Credits extraídos de entity_credits:', usageData);
+          }
+        }
+
+        // Se ainda sem dados, tenta usar remaining_words do userData
+        if (!usageData && userData.remaining_words) {
+          console.log('🔍 Tentativa 4: Usando remaining_words...');
+          creditsSource = 'remaining_words';
+          usageData = { words_left: Number(userData.remaining_words) };
+          console.log('✅ Usando remaining_words:', usageData);
+        }
+
+        // Última tentativa: valor padrão
+        if (!usageData) {
+          console.log('⚠️ Usando fallback padrão: 100 palavras');
+          creditsSource = 'fallback-padrão';
+          usageData = { words_left: 100 };
         }
         
         // Calcula os totais baseado nos créditos das diferentes APIs
@@ -241,15 +312,24 @@ class AuthService {
         const fullUserData: SmileAIUser = {
           ...userData,
           plan_name: PLAN_DETAILS[userData.plan_type]?.name || (usageData?.plan_name || 'Básico'),
-          role: userData.type, // Mantém a função separada do plano
-          words_left: Math.max(0, wordsLeft), // Garante que não seja negativo
+          role: userData.type,
+          words_left: Math.max(0, wordsLeft),
           total_words: usageData?.total_words || totalWords || 100,
           images_left: usageData?.images_left !== undefined ? Number(usageData.images_left) : (Number(userData.remaining_images) || 0),
           total_images: usageData?.total_images || 0,
           plan_status: usageData?.plan_status || (userData.status === 1 ? 'active' : 'inactive')
         };
 
-        console.log('Dados completos do usuário:', fullUserData);
+        console.log(`\n✅ RESULTADO FINAL (fonte: ${creditsSource}):`);
+        console.log({
+          name: fullUserData.name,
+          email: fullUserData.email,
+          plan: fullUserData.plan_name,
+          words_left: fullUserData.words_left,
+          total_words: fullUserData.total_words,
+          source: creditsSource
+        });
+
         this.saveUser(fullUserData);
         return fullUserData;
       } catch (error) {
