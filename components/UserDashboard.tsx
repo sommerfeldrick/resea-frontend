@@ -44,16 +44,28 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
   console.log('Dados do usuário no dashboard:', user);
 
   // Usando os dados diretamente do user
+  // Função auxiliar para somar créditos de todos os submodelos
+  const sumModelCredits = (serviceObj: { [key: string]: { credit: number, isUnlimited: boolean } } | undefined): number => {
+    if (!serviceObj) return 0;
+    return Object.values(serviceObj).reduce((sum, model) => {
+      if (model.isUnlimited) return sum + 999999; // Valor alto para representar ilimitado
+      return sum + (model.credit || 0);
+    }, 0);
+  };
+
   // Calcula os totais baseado nos créditos das diferentes APIs
   const totalWords = (
-    (user.entity_credits?.openai?.credit || 0) +
-    (user.entity_credits?.anthropic?.credit || 0) +
-    (user.entity_credits?.gemini?.credit || 0)
+    sumModelCredits(user.entity_credits?.openai) +
+    sumModelCredits(user.entity_credits?.anthropic) +
+    sumModelCredits(user.entity_credits?.gemini) +
+    sumModelCredits(user.entity_credits?.azure)
   );
 
   const totalImages = (
-    (user.entity_credits?.stable_diffusion?.credit || 0) +
-    (user.entity_credits?.clipdrop?.credit || 0)
+    sumModelCredits(user.entity_credits?.stable_diffusion) +
+    sumModelCredits(user.entity_credits?.clipdrop) +
+    sumModelCredits(user.entity_credits?.pebblely) +
+    sumModelCredits(user.entity_credits?.piapi)  // midjourney
   );
 
   const usageData = {
@@ -113,7 +125,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ className = '' }) 
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700">Créditos de Palavras</span>
             <span className="text-sm text-gray-500">
-              {usageData.words_left.toLocaleString()} / {usageData.total_words.toLocaleString()}
+              {usageData.words_left.toLocaleString()} / {usageData.total_words >= 999999 ? '∞' : usageData.total_words.toLocaleString()}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2.5">

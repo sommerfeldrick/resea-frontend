@@ -21,11 +21,15 @@ export interface SmileAIUser {
   remaining_words?: string;
   remaining_images?: string;
   entity_credits?: {
-    openai?: { credit: number };
-    stable_diffusion?: { credit: number };
-    anthropic?: { credit: number };
-    gemini?: { credit: number };
-    clipdrop?: { credit: number };
+    openai?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    stable_diffusion?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    anthropic?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    gemini?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    clipdrop?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    azure?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    pebblely?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    piapi?: { [key: string]: { credit: number, isUnlimited: boolean } };
+    [key: string]: { [key: string]: { credit: number, isUnlimited: boolean } } | undefined;
   };
 }
 
