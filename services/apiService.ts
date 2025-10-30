@@ -39,13 +39,15 @@ async function apiRequest<T>(
       throw new Error(error.error || 'Request failed');
     }
 
-    const data = await response.json();
+    const json = await response.json();
 
-    if (!data.success && data.error) {
-      throw new Error(data.error);
+    if (!json.success && json.error) {
+      throw new Error(json.error);
     }
 
-    return data;
+    // If response has { success: true, data: ... }, extract data
+    // Otherwise return the whole response
+    return json.data !== undefined ? json.data : json;
   } catch (error: any) {
     console.error(`API request failed: ${endpoint}`, error);
     throw new Error(error.message || 'Failed to connect to server');
