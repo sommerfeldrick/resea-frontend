@@ -48,4 +48,5 @@ export interface CompletedResearch {
     researchResults: ResearchResult[];
     outline: string;
     writtenContent: string;
+    timestamp?: number;
 }

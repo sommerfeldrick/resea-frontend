@@ -372,6 +372,117 @@ export function deleteComment(researchId: string, commentId: string): void {
 }
 
 // ==========================================
+// VERSION MANAGER CLASS
+// ==========================================
+
+export class VersionManager {
+  createVersion(researchId: string, content: string, outline: string, comment?: string): void {
+    saveVersion(researchId, content, outline, comment).catch(err => {
+      console.error('Failed to create version:', err);
+    });
+  }
+
+  async getVersionHistory(researchId: string): Promise<ResearchVersion[]> {
+    return await getVersions(researchId);
+  }
+
+  async restore(versionId: string): Promise<ResearchVersion | null> {
+    return await restoreVersion(versionId);
+  }
+}
+
+// ==========================================
+// ANALYTICS MANAGER CLASS
+// ==========================================
+
+interface CompletionData {
+  wordsGenerated: number;
+  sourcesUsed: number;
+  timeSpent: number;
+  phases: string[];
+}
+
+export class AnalyticsManager {
+  private analytics: Map<string, CompletionData> = new Map();
+
+  trackCompletion(researchId: string, data: CompletionData): void {
+    this.analytics.set(researchId, data);
+    
+    // Salvar no localStorage
+    try {
+      const key = `resea_analytics_${researchId}`;
+      localStorage.setItem(key, JSON.stringify(data));
+      console.log('📊 Analytics tracked:', data);
+    } catch (error) {
+      console.error('Failed to track analytics:', error);
+    }
+  }
+
+  getAnalytics(researchId: string): CompletionData | null {
+    // Tentar obter do cache
+    if (this.analytics.has(researchId)) {
+      return this.analytics.get(researchId)!;
+    }
+
+    // Tentar obter do localStorage
+    try {
+      const key = `resea_analytics_${researchId}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const data = JSON.parse(stored);
+        this.analytics.set(researchId, data);
+        return data;
+      }
+    } catch (error) {
+      console.error('Failed to get analytics:', error);
+    }
+
+    return null;
+  }
+
+  async getAggregatedStats(): Promise<{
+    totalResearches: number;
+    totalWords: number;
+    totalSources: number;
+    averageTime: number;
+  }> {
+    try {
+      const history = await loadAllResearch();
+      
+      let totalWords = 0;
+      let totalSources = 0;
+      let totalTime = 0;
+      let count = 0;
+
+      for (const research of history) {
+        const analytics = this.getAnalytics(research.id);
+        if (analytics) {
+          totalWords += analytics.wordsGenerated;
+          totalSources += analytics.sourcesUsed;
+          totalTime += analytics.timeSpent;
+          count++;
+        }
+      }
+
+      return {
+        totalResearches: history.length,
+        totalWords,
+        totalSources,
+        averageTime: count > 0 ? totalTime / count : 0
+      };
+    } catch (error) {
+      console.error('Failed to get aggregated stats:', error);
+      return {
+        totalResearches: 0,
+        totalWords: 0,
+        totalSources: 0,
+        averageTime: 0
+      };
+    }
+  }
+}
+
+// ==========================================
 // EXPORT ALL
 // ==========================================
 
@@ -380,6 +491,8 @@ export const enhancedStorageService = {
   getVersions,
   restoreVersion,
   AutoSaveManager,
+  VersionManager,
+  AnalyticsManager,
   getStorageStats,
   searchResearches,
   filterResearchesByDate,
