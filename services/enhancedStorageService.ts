@@ -4,7 +4,7 @@
  */
 
 import type { CompletedResearch } from '../types';
-import { saveResearch, getResearchHistory } from './storageService';
+import { saveResearch, loadAllResearch } from './storageService';
 
 // ==========================================
 // VERSIONING SYSTEM
@@ -193,7 +193,7 @@ export class AutoSaveManager {
 
 export async function getStorageStats() {
   try {
-    const history = await getResearchHistory();
+    const history = await loadAllResearch();
 
     const totalResearches = history.length;
     const totalWords = history.reduce((sum, r) => {
@@ -226,7 +226,7 @@ export async function getStorageStats() {
 // ==========================================
 
 export async function searchResearches(query: string): Promise<CompletedResearch[]> {
-  const history = await getResearchHistory();
+  const history = await loadAllResearch();
   const lowerQuery = query.toLowerCase();
 
   return history.filter(research => {
@@ -242,7 +242,7 @@ export async function filterResearchesByDate(
   startDate: Date,
   endDate: Date
 ): Promise<CompletedResearch[]> {
-  const history = await getResearchHistory();
+  const history = await loadAllResearch();
 
   return history.filter(research => {
     const timestamp = research.timestamp || 0;
@@ -255,7 +255,7 @@ export async function filterResearchesByDate(
 // ==========================================
 
 export async function exportAllData(): Promise<string> {
-  const history = await getResearchHistory();
+  const history = await loadAllResearch();
   const stats = await getStorageStats();
 
   const backup = {
@@ -311,7 +311,7 @@ export async function importBackup(jsonString: string): Promise<number> {
 // ==========================================
 
 export async function deleteOldResearches(daysOld: number): Promise<number> {
-  const history = await getResearchHistory();
+  const history = await loadAllResearch();
   const cutoffDate = Date.now() - (daysOld * 24 * 60 * 60 * 1000);
 
   let deleted = 0;
