@@ -23,7 +23,7 @@ export const ContentGenerationFlow: React.FC<ContentGenerationFlowProps> = ({ on
     setIsGenerating(true);
     setError(null);
     setFlowState('generating');
-    setProgress('🔍 Fazendo scraping de fontes acadêmicas...');
+    setProgress('Coletando fontes acadêmicas...');
 
     try {
       // Extrai título do prompt se possível
@@ -31,14 +31,14 @@ export const ContentGenerationFlow: React.FC<ContentGenerationFlowProps> = ({ on
       const title = titleMatch ? titleMatch[1].trim() : 'Documento Acadêmico';
       setDocumentTitle(title);
 
-      setProgress('🤖 Gerando conteúdo com IA...');
+      setProgress('Gerando conteúdo acadêmico com IA...');
 
       // Gera o conteúdo
       const result = await generateResearchContent(prompt);
 
       setGeneratedContent(result.content);
       setWordCount(result.wordCount);
-      setProgress('✅ Conteúdo gerado com sucesso!');
+      setProgress('Conteúdo gerado com sucesso!');
 
       // Atualiza créditos
       await creditService.fetchCredits();
@@ -98,39 +98,54 @@ export const ContentGenerationFlow: React.FC<ContentGenerationFlowProps> = ({ on
 
           <div className="space-y-3 text-left">
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-2xl">🔍</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">Scraping Inteligente</p>
+                <p className="font-medium text-gray-900 dark:text-white">Busca Acadêmica Avançada</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Coletando dados de Google Scholar, PubMed e Wikipedia
+                  Consultando 15 bases científicas: OpenAlex, Semantic Scholar, arXiv, PubMed e mais
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-2xl">🤖</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">IA Multi-Modelo</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Usando Groq, Ollama ou OpenAI com fallback automático
+                  DeepSeek V3.2-Exp, Gemini 2.0 Flash ou GPT-4o-mini com fallback automático
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <span className="text-2xl">✨</span>
+              <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">Conteúdo Acadêmico</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Gerando texto estruturado e bem fundamentado
+                  Gerando documento estruturado com citações ABNT e fundamentação científica
                 </p>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
-              ❌ {error}
+            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-red-600 dark:text-red-400 text-sm">{error}</span>
             </div>
           )}
         </div>

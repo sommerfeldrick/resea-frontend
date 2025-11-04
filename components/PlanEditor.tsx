@@ -162,18 +162,21 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ plan, onSave, onCancel }
           </div>
 
           {/* Phases */}
-          {renderPhaseEditor('thinking', 'Pensamento', '🤔')}
-          {renderPhaseEditor('research', 'Pesquisa', '🔍')}
-          {renderPhaseEditor('writing', 'Redação', '✍️')}
+          {renderPhaseEditor('thinking', 'Análise e Planejamento', '')}
+          {renderPhaseEditor('research', 'Pesquisa Acadêmica', '')}
+          {renderPhaseEditor('writing', 'Redação e Estruturação', '')}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <button
             onClick={() => setEditedPlan(JSON.parse(JSON.stringify(plan)))}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium flex items-center gap-2"
           >
-            🔄 Resetar
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Resetar
           </button>
           <div className="flex gap-3">
             <button
@@ -184,9 +187,12 @@ export const PlanEditor: React.FC<PlanEditorProps> = ({ plan, onSave, onCancel }
             </button>
             <button
               onClick={() => onSave(editedPlan)}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center gap-2"
             >
-              ✓ Salvar e Continuar
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Salvar e Continuar
             </button>
           </div>
         </div>
