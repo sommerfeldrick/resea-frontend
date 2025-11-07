@@ -5,6 +5,7 @@ import { LoginPage } from './components/LoginPage';
 import { ContentGenerationFlow } from './components/ContentGenerationFlow';
 import { UserDashboard } from './components/UserDashboard';
 import { AuthIntegration } from './components/AuthIntegration';
+import { ResearchWizard } from './components/ResearchWizard';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
@@ -258,7 +259,7 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, handleTokenRedirect } = useAuth();
-  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation'>('landing');
+  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation' | 'wizard'>('wizard');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
@@ -305,7 +306,7 @@ const AppContent: React.FC = () => {
   };
 
   const handleNewSearch = () => {
-    setView('landing');
+    setView('wizard');
     setTaskPlan(null);
     setQuery('');
     setCurrentResearch(null);
@@ -349,6 +350,8 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     switch (view) {
+      case 'wizard':
+        return <ResearchWizard />;
       case 'landing':
         return <LandingPage onPlanGenerated={handlePlanGenerated} />;
       case 'content_generation':
@@ -368,7 +371,7 @@ const AppContent: React.FC = () => {
         }
         return <div className="flex items-center justify-center h-full">Carregando...</div>;
       default:
-        return <LandingPage onPlanGenerated={handlePlanGenerated} />;
+        return <ResearchWizard />;
     }
   }
 
