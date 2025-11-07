@@ -258,7 +258,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
 
     try {
       // Iniciar FASE 2: Gerar perguntas de clarificação
-      const response = await fetch(`${API_BASE_URL}/research-flow/clarification/generate`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/clarification/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query })
@@ -322,7 +322,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
         answer
       }));
 
-      const processResponse = await fetch(`${API_BASE_URL}/research-flow/clarification/process`, {
+      const processResponse = await fetch(`${API_BASE_URL}/api/research-flow/clarification/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -336,7 +336,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
       const processData = await processResponse.json();
 
       // Gerar estratégia de busca (FASE 3)
-      const strategyResponse = await fetch(`${API_BASE_URL}/research-flow/strategy/generate`, {
+      const strategyResponse = await fetch(`${API_BASE_URL}/api/research-flow/strategy/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -369,7 +369,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     setCurrentPhase('search');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research-flow/search/execute`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/search/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ strategy: searchStrategy })
@@ -425,7 +425,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research-flow/analysis/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/analysis/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -459,7 +459,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     setGeneratedContent('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research-flow/generation/generate`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/generation/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -545,7 +545,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     setShowEditMenu(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research-flow/editing/process`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/editing/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -591,7 +591,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research-flow/export/verify`, {
+      const response = await fetch(`${API_BASE_URL}/api/research-flow/export/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
