@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../config';
+import { authService } from '../services/authService';
 
 // ============================================
 // Types
@@ -243,6 +244,15 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
   // Refs
   const contentEditorRef = useRef<HTMLTextAreaElement>(null);
 
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = authService.getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   // ============================================
   // FASE 1: ONBOARDING
   // ============================================
@@ -260,7 +270,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
       // Iniciar FASE 2: Gerar perguntas de clarificação
       const response = await fetch(`${API_BASE_URL}/api/research-flow/clarification/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ query })
       });
 
@@ -324,7 +334,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
 
       const processResponse = await fetch(`${API_BASE_URL}/api/research-flow/clarification/process`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           sessionId: clarificationSession.sessionId,
           answers: answersArray
@@ -338,7 +348,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
       // Gerar estratégia de busca (FASE 3)
       const strategyResponse = await fetch(`${API_BASE_URL}/api/research-flow/strategy/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           query: clarificationSession.query,
           clarificationSummary: processData.data.summary
@@ -371,7 +381,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     try {
       const response = await fetch(`${API_BASE_URL}/api/research-flow/search/execute`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ strategy: searchStrategy })
       });
 
@@ -427,7 +437,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     try {
       const response = await fetch(`${API_BASE_URL}/api/research-flow/analysis/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           articles: articlesToAnalyze,
           query: query
@@ -461,7 +471,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     try {
       const response = await fetch(`${API_BASE_URL}/api/research-flow/generation/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           config: generationConfig,
           articles: articles,
@@ -547,7 +557,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     try {
       const response = await fetch(`${API_BASE_URL}/api/research-flow/editing/process`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           request: {
             action: action,
@@ -593,7 +603,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
     try {
       const response = await fetch(`${API_BASE_URL}/api/research-flow/export/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           content: editingContent,
           articles: articles
