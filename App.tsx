@@ -259,7 +259,7 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, handleTokenRedirect } = useAuth();
-  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation' | 'wizard'>('wizard');
+  const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation' | 'wizard'>('landing');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
@@ -296,7 +296,7 @@ const AppContent: React.FC = () => {
     setTaskPlan(plan);
     setQuery(userQuery);
     setCurrentResearch(null);
-    setView('plan_confirmation');
+    setView('wizard'); // Navigate to new 8-phase wizard
   };
 
   const handleStartResearch = () => {
@@ -351,7 +351,7 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'wizard':
-        return <ResearchWizard />;
+        return <ResearchWizard initialQuery={query} />;
       case 'landing':
         return <LandingPage onPlanGenerated={handlePlanGenerated} />;
       case 'content_generation':

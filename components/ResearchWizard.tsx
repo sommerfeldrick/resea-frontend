@@ -182,14 +182,18 @@ interface QualityVerification {
 // Component
 // ============================================
 
-export const ResearchWizard: React.FC = () => {
+interface ResearchWizardProps {
+  initialQuery?: string;
+}
+
+export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '' }) => {
   // Phase management
   const [currentPhase, setCurrentPhase] = useState<WizardPhase>('onboarding');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Phase 1: Onboarding
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
 
   // Phase 2: Clarification
   const [clarificationSession, setClarificationSession] = useState<ClarificationSession | null>(null);
