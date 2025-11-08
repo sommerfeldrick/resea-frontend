@@ -185,11 +185,17 @@ interface QualityVerification {
 
 interface ResearchWizardProps {
   initialQuery?: string;
+  initialClarificationSession?: ClarificationSession | null;
 }
 
-export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '' }) => {
-  // Phase management
-  const [currentPhase, setCurrentPhase] = useState<WizardPhase>('onboarding');
+export const ResearchWizard: React.FC<ResearchWizardProps> = ({
+  initialQuery = '',
+  initialClarificationSession = null
+}) => {
+  // Phase management - start at Phase 2 if clarification session provided
+  const [currentPhase, setCurrentPhase] = useState<WizardPhase>(
+    initialClarificationSession ? 'clarification' : 'onboarding'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -197,7 +203,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
   const [query, setQuery] = useState(initialQuery);
 
   // Phase 2: Clarification
-  const [clarificationSession, setClarificationSession] = useState<ClarificationSession | null>(null);
+  const [clarificationSession, setClarificationSession] = useState<ClarificationSession | null>(
+    initialClarificationSession
+  );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
 
@@ -1875,7 +1883,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({ initialQuery = '
       )}
 
       {/* Phase Content */}
-      {currentPhase === 'onboarding' && renderPhase1Onboarding()}
+      {/* Phase 1 (Onboarding) is now handled by LandingPage */}
       {currentPhase === 'clarification' && renderPhase2Clarification()}
       {currentPhase === 'strategy' && renderPhase3Strategy()}
       {currentPhase === 'search' && renderPhase4Search()}

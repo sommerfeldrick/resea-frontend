@@ -257,11 +257,20 @@ const PlanConfirmation: React.FC<{ plan: TaskPlan, onConfirm: () => void, onCanc
     );
 };
 
+interface ClarificationSession {
+  sessionId: string;
+  query: string;
+  questions: any[];
+  answers: Array<{ questionId: string; answer: any }>;
+  completed: boolean;
+}
+
 const AppContent: React.FC = () => {
   const { isAuthenticated, loading, handleTokenRedirect } = useAuth();
   const [view, setView] = useState<'landing' | 'plan_confirmation' | 'research' | 'content_generation' | 'wizard'>('landing');
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [query, setQuery] = useState('');
+  const [clarificationSession, setClarificationSession] = useState<ClarificationSession | null>(null);
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -299,6 +308,13 @@ const AppContent: React.FC = () => {
     setView('wizard'); // Navigate to new 8-phase wizard
   };
 
+  const handleResearchStart = (userQuery: string, session: ClarificationSession) => {
+    setQuery(userQuery);
+    setClarificationSession(session);
+    setCurrentResearch(null);
+    setView('wizard'); // Navigate to wizard starting at Phase 2
+  };
+
   const handleStartResearch = () => {
     if (taskPlan) {
       setView('research');
@@ -306,9 +322,10 @@ const AppContent: React.FC = () => {
   };
 
   const handleNewSearch = () => {
-    setView('wizard');
+    setView('landing');
     setTaskPlan(null);
     setQuery('');
+    setClarificationSession(null);
     setCurrentResearch(null);
   };
   
@@ -351,9 +368,9 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'wizard':
-        return <ResearchWizard initialQuery={query} />;
+        return <ResearchWizard initialQuery={query} initialClarificationSession={clarificationSession} />;
       case 'landing':
-        return <LandingPage onPlanGenerated={handlePlanGenerated} />;
+        return <LandingPage onPlanGenerated={handlePlanGenerated} onResearchStart={handleResearchStart} />;
       case 'content_generation':
         return <ContentGenerationFlow onBack={handleNewSearch} />;
       case 'plan_confirmation':

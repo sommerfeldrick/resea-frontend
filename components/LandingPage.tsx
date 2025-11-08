@@ -6,13 +6,24 @@ import { useAuth } from '../contexts/AuthContext';
 import { AcademicTemplatesGallery } from './AcademicTemplatesGallery';
 import { FileUploadModal } from './FileUploadModal';
 import type { UploadedFile } from '../types/templates';
+import { API_BASE_URL } from '../config';
+import { authService } from '../services/authService';
+
+interface ClarificationSession {
+  sessionId: string;
+  query: string;
+  questions: any[];
+  answers: Array<{ questionId: string; answer: any }>;
+  completed: boolean;
+}
 
 interface LandingPageProps {
   onPlanGenerated: (plan: TaskPlan, query: string) => void;
+  onResearchStart?: (query: string, clarificationSession: ClarificationSession) => void;
   onBack?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onBack }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onResearchStart, onBack }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +37,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onBac
     setIsLoading(true);
     setError(null);
     try {
-      // Settings are now hardcoded in the service for deep research and humanized style.
-      const plan = await generateTaskPlan(query);
-      onPlanGenerated(plan, query);
+      // If onResearchStart is provided, use new 8-phase wizard flow
+      if (onResearchStart) {
+        // Call clarification API to start Phase 2 directly
+        const token = authService.getToken();
+        const response = await fetch(`${API_BASE_URL}/api/research-flow/clarification/generate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ query })
+        });
+
+        if (!response.ok) throw new Error('Falha ao iniciar pesquisa');
+
+        const data = await response.json();
+        onResearchStart(query, data.data);
+      } else {
+        // Fallback to old flow
+        const plan = await generateTaskPlan(query);
+        onPlanGenerated(plan, query);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao gerar o plano de pesquisa. Por favor, tente novamente.');
       console.error(err);
