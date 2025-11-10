@@ -398,6 +398,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let accumulatedArticles: EnrichedArticle[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -408,17 +409,25 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
+            try {
+              const data = JSON.parse(line.slice(6));
 
-            if (data.type === 'progress') {
-              setSearchProgress(data.data);
-            } else if (data.type === 'complete') {
-              setArticles(data.data);
-              setIsLoading(false);
-              // Iniciar FASE 5 automaticamente
-              setTimeout(() => handleStartAnalysis(data.data), 1000);
-            } else if (data.type === 'error') {
-              throw new Error(data.error);
+              if (data.type === 'progress') {
+                setSearchProgress(data.data);
+              } else if (data.type === 'articles_batch') {
+                // Acumular artigos dos lotes
+                accumulatedArticles = [...accumulatedArticles, ...data.data];
+                setArticles(accumulatedArticles);
+              } else if (data.type === 'complete') {
+                setIsLoading(false);
+                // Iniciar FASE 5 automaticamente com todos os artigos acumulados
+                setTimeout(() => handleStartAnalysis(accumulatedArticles), 1000);
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (parseError: any) {
+              console.error('Failed to parse SSE data:', line, parseError);
+              // Continue processando outros eventos mesmo se um falhar
             }
           }
         }
