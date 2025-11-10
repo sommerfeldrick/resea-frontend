@@ -942,7 +942,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               {p3Queries.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    P3 (Artigos Aceitáveis - Score ≥30):
+                    P3 (Artigos Aceitáveis - Score 30-44):
                   </h4>
                   <ul className="space-y-1">
                     {p3Queries.map((q, idx) => (
