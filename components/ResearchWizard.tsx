@@ -861,6 +861,15 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const renderPhase3Strategy = () => {
     if (!searchStrategy) return <div>Carregando estratégia...</div>;
 
+    // Validação defensiva contra JSON malformado
+    const queries = searchStrategy.queries || {};
+    const p1Queries = Array.isArray(queries.P1) ? queries.P1 : [];
+    const p2Queries = Array.isArray(queries.P2) ? queries.P2 : [];
+    const p3Queries = Array.isArray(queries.P3) ? queries.P3 : [];
+    const sources = Array.isArray(searchStrategy.prioritizedSources) ? searchStrategy.prioritizedSources : [];
+    const filters = searchStrategy.filters || {};
+    const dateRange = filters.dateRange || { start: 2020, end: 2025 };
+
     return (
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -887,7 +896,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 Buscar sobre:
               </h3>
               <p className="text-gray-700 dark:text-gray-300">
-                "{searchStrategy.topic}"
+                "{searchStrategy.topic || 'Sem título'}"
               </p>
             </div>
 
@@ -898,90 +907,100 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               </h3>
 
               {/* P1 */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  P1 (Artigos Excelentes - Score ≥75):
-                </h4>
-                <ul className="space-y-1">
-                  {searchStrategy.queries.P1.map((q, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                      • "{q.query}"
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {p1Queries.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    P1 (Artigos Excelentes - Score ≥70):
+                  </h4>
+                  <ul className="space-y-1">
+                    {p1Queries.map((q, idx) => (
+                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
+                        • "{q.query || 'Query inválida'}"
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* P2 */}
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  P2 (Artigos Bons - Score ≥50):
-                </h4>
-                <ul className="space-y-1">
-                  {searchStrategy.queries.P2.map((q, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                      • "{q.query}"
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {p2Queries.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    P2 (Artigos Bons - Score ≥45):
+                  </h4>
+                  <ul className="space-y-1">
+                    {p2Queries.map((q, idx) => (
+                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
+                        • "{q.query || 'Query inválida'}"
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* P3 */}
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  P3 (Artigos Aceitáveis - Score ≥30):
-                </h4>
-                <ul className="space-y-1">
-                  {searchStrategy.queries.P3.map((q, idx) => (
-                    <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                      • "{q.query}"
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {p3Queries.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    P3 (Artigos Aceitáveis - Score ≥30):
+                  </h4>
+                  <ul className="space-y-1">
+                    {p3Queries.map((q, idx) => (
+                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
+                        • "{q.query || 'Query inválida'}"
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Sources */}
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                Fontes priorizadas:
-              </h3>
-              <ol className="space-y-2">
-                {searchStrategy.prioritizedSources.map((source) => (
-                  <li key={source.order} className="flex items-start gap-2">
-                    <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                      {source.order}.
-                    </span>
-                    <div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {source.name}
+            {sources.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                  Fontes priorizadas:
+                </h3>
+                <ol className="space-y-2">
+                  {sources.map((source, idx) => (
+                    <li key={source.order || idx} className="flex items-start gap-2">
+                      <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                        {source.order || idx + 1}.
                       </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                        - {source.reason}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+                      <div>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {source.name || 'Fonte desconhecida'}
+                        </span>
+                        {source.reason && (
+                          <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
+                            - {source.reason}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Período</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {searchStrategy.filters.dateRange.start} - {searchStrategy.filters.dateRange.end}
+                  {dateRange.start} - {dateRange.end}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Meta de artigos</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {searchStrategy.targetArticles} artigos
+                  {searchStrategy.targetArticles || 70} artigos
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Tempo estimado</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {searchStrategy.estimatedTime}
+                  {searchStrategy.estimatedTime || '3-5 min'}
                 </p>
               </div>
             </div>
