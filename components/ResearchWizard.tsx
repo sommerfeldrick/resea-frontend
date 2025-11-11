@@ -112,8 +112,9 @@ interface EnrichedArticle {
     priority: 'P1' | 'P2' | 'P3';
     reasons: string[];
   };
-  format: string;
-  hasFulltext: boolean;
+  // 🚀 Campos de fulltext (opcionais, vem do backend)
+  format?: string;
+  hasFulltext?: boolean;
   fullContent?: string;
   sections?: Record<string, string>;
 }
