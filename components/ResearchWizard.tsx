@@ -399,18 +399,28 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedArticles: EnrichedArticle[] = [];
+      let buffer = ''; // Buffer para linhas incompletas
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        // Adicionar novo chunk ao buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Processar apenas linhas completas (que terminam com \n)
+        const lines = buffer.split('\n');
+
+        // Última "linha" pode estar incompleta, guardar no buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6));
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue; // Linha vazia, pular
+
+              const data = JSON.parse(jsonStr);
 
               if (data.type === 'progress') {
                 setSearchProgress(data.data);
@@ -426,10 +436,26 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 throw new Error(data.error);
               }
             } catch (parseError: any) {
-              console.error('Failed to parse SSE data:', line, parseError);
+              console.warn('Failed to parse SSE line (will retry on next chunk):', line.substring(0, 100));
               // Continue processando outros eventos mesmo se um falhar
             }
           }
+        }
+      }
+
+      // Processar qualquer linha restante no buffer
+      if (buffer.trim().startsWith('data: ')) {
+        try {
+          const jsonStr = buffer.slice(6).trim();
+          if (jsonStr) {
+            const data = JSON.parse(jsonStr);
+            if (data.type === 'complete') {
+              setIsLoading(false);
+              setTimeout(() => handleStartAnalysis(accumulatedArticles), 1000);
+            }
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse final buffer:', buffer.substring(0, 100));
         }
       }
     } catch (err: any) {
@@ -502,28 +528,63 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let content = '';
+      let buffer = ''; // Buffer para linhas incompletas
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        // Adicionar novo chunk ao buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Processar apenas linhas completas (que terminam com \n)
+        const lines = buffer.split('\n');
+
+        // Última "linha" pode estar incompleta, guardar no buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
+            try {
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr) continue; // Linha vazia, pular
 
-            if (data.type === 'chunk') {
-              content += data.data;
-              setGeneratedContent(content);
-            } else if (data.type === 'complete') {
-              setIsGenerating(false);
-              setEditingContent(content);
-            } else if (data.type === 'error') {
-              throw new Error(data.error);
+              const data = JSON.parse(jsonStr);
+
+              if (data.type === 'chunk') {
+                content += data.data;
+                setGeneratedContent(content);
+              } else if (data.type === 'flush') {
+                // Evento de flush - garantir que todo conteúdo foi processado
+                console.log('Flush event received, total chunks:', data.totalChunks);
+              } else if (data.type === 'complete') {
+                console.log('Generation complete, final content length:', content.length);
+                setIsGenerating(false);
+                setEditingContent(content);
+              } else if (data.type === 'error') {
+                throw new Error(data.error);
+              }
+            } catch (parseError) {
+              // Se JSON parse falhar, apenas logar e continuar
+              console.warn('Failed to parse SSE line (will retry on next chunk):', line.substring(0, 100));
             }
           }
+        }
+      }
+
+      // Processar qualquer linha restante no buffer
+      if (buffer.trim().startsWith('data: ')) {
+        try {
+          const jsonStr = buffer.slice(6).trim();
+          if (jsonStr) {
+            const data = JSON.parse(jsonStr);
+            if (data.type === 'complete') {
+              setIsGenerating(false);
+              setEditingContent(content);
+            }
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse final buffer:', buffer.substring(0, 100));
         }
       }
     } catch (err: any) {
