@@ -1150,7 +1150,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                   Progresso por fonte:
                 </h3>
                 <div className="space-y-3">
-                  {searchProgress.sourceProgress.map((source) => (
+                  {searchProgress.sourceProgress?.map((source) => (
                     <div key={source.source} className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32">
                         {source.source}
