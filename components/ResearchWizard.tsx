@@ -307,7 +307,13 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     if (!clarificationSession) return;
 
     const currentQuestion = clarificationSession.questions[currentQuestionIndex];
-    if (currentQuestion.required && !answers[currentQuestion.id]) {
+
+    // Permitir pular se a pergunta não tem opções válidas
+    const hasValidOptions = currentQuestion.type === 'multiple_choice'
+      ? (currentQuestion.options && currentQuestion.options.length > 0)
+      : true;
+
+    if (currentQuestion.required && !answers[currentQuestion.id] && hasValidOptions) {
       setError('Por favor, responda a pergunta antes de continuar');
       return;
     }
@@ -824,45 +830,55 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
             </div>
           </div>
 
-          {question.type === 'multiple_choice' && question.options && (
-            <div className="space-y-3">
-              {question.options.map((option) => (
-                <label
-                  key={option.value}
-                  className={`block p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    answers[question.id] === option.value
-                      ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={question.id}
-                    value={option.value}
-                    checked={answers[question.id] === option.value}
-                    onChange={() => handleAnswerQuestion(question.id, option.value)}
-                    className="sr-only"
-                  />
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {option.label}
-                      </p>
-                      {option.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {option.description}
-                        </p>
-                      )}
-                    </div>
-                    {option.estimatedArticles && (
-                      <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                        ~{option.estimatedArticles} artigos
-                      </span>
-                    )}
-                  </div>
-                </label>
-              ))}
-            </div>
+          {question.type === 'multiple_choice' && (
+            <>
+              {question.options && question.options.length > 0 ? (
+                <div className="space-y-3">
+                  {question.options.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`block p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                        answers[question.id] === option.value
+                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={question.id}
+                        value={option.value}
+                        checked={answers[question.id] === option.value}
+                        onChange={() => handleAnswerQuestion(question.id, option.value)}
+                        className="sr-only"
+                      />
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {option.label}
+                          </p>
+                          {option.description && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              {option.description}
+                            </p>
+                          )}
+                        </div>
+                        {option.estimatedArticles && (
+                          <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                            ~{option.estimatedArticles} artigos
+                          </span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    ⚠️ Esta pergunta não possui opções disponíveis. Por favor, volte e tente novamente ou pule para a próxima pergunta.
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           {error && (
