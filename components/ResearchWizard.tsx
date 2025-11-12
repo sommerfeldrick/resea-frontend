@@ -1202,7 +1202,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               </div>
 
               {/* Format Distribution */}
-              {Object.keys(searchProgress.formatsDetected).length > 0 && (
+              {searchProgress.formatsDetected && Object.keys(searchProgress.formatsDetected).length > 0 && (
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                     Formatos detectados:
