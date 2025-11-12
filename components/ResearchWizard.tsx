@@ -212,6 +212,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
   // Phase 3: Strategy
   const [searchStrategy, setSearchStrategy] = useState<SearchStrategy | null>(null);
+  const [structuredData, setStructuredData] = useState<any>(null); // Dados estruturados da clarificação
 
   // Phase 4: Search
   const [searchProgress, setSearchProgress] = useState<SearchProgress | null>(null);
@@ -237,6 +238,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   });
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateCompleteDoc, setGenerateCompleteDoc] = useState(true); // Padrão: documento completo
 
   // Phase 7: Editing
   const [editingContent, setEditingContent] = useState('');
@@ -359,6 +361,11 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       if (!processResponse.ok) throw new Error('Falha ao processar respostas');
 
       const processData = await processResponse.json();
+
+      // Armazenar dados estruturados da clarificação (incluindo focusSection)
+      if (processData.data.structuredData) {
+        setStructuredData(processData.data.structuredData);
+      }
 
       // Gerar estratégia de busca (FASE 3) - incluindo dados estruturados!
       const strategyResponse = await fetch(`${API_BASE_URL}/api/research-flow/strategy/generate`, {
@@ -520,13 +527,22 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     setGeneratedContent('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/research-flow/generation/generate`, {
+      // Escolher endpoint baseado no modo de geração
+      const endpoint = generateCompleteDoc
+        ? `${API_BASE_URL}/api/research-flow/generation/complete`
+        : `${API_BASE_URL}/api/research-flow/generation/generate`;
+
+      // Extrair focusSection dos dados estruturados da clarificação
+      const focusSection = structuredData?.focusSection || 'todas';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
           config: generationConfig,
           articles: articles,
-          query: query
+          query: query,
+          focusSection: generateCompleteDoc ? focusSection : undefined
         })
       });
 
@@ -1459,6 +1475,72 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               </h3>
 
               <div className="space-y-4">
+                {/* Modo de Geração */}
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border-2 border-indigo-200 dark:border-indigo-800">
+                  <label className="block text-sm font-semibold text-indigo-900 dark:text-indigo-200 mb-3">
+                    Modo de Geração
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="radio"
+                        checked={generateCompleteDoc}
+                        onChange={() => setGenerateCompleteDoc(true)}
+                        className="mt-1 rounded-full"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                          Documento Completo
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Gera todas as 6 seções: Introdução, Revisão, Metodologia, Resultados, Discussão, Conclusão
+                        </div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="radio"
+                        checked={!generateCompleteDoc}
+                        onChange={() => setGenerateCompleteDoc(false)}
+                        className="mt-1 rounded-full"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                          Seção Específica
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Gera apenas a seção selecionada abaixo
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Section (only if single section mode) */}
+                {!generateCompleteDoc && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Seção
+                    </label>
+                    <select
+                      value={generationConfig.section}
+                      onChange={(e) => setGenerationConfig({
+                        ...generationConfig,
+                        section: e.target.value
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                               bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="Introdução">Introdução</option>
+                      <option value="Revisão de Literatura">Revisão de Literatura</option>
+                      <option value="Metodologia">Metodologia</option>
+                      <option value="Resultados">Resultados</option>
+                      <option value="Discussão">Discussão</option>
+                      <option value="Conclusão">Conclusão</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Style */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
