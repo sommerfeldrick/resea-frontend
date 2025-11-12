@@ -70,9 +70,9 @@ class AuthService {
    * Login with email and password
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    // Timeout de 30 segundos para evitar espera indefinida
+    // Timeout de 15 segundos (backend tem 8s máximo)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
