@@ -360,13 +360,14 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
       const processData = await processResponse.json();
 
-      // Gerar estratégia de busca (FASE 3)
+      // Gerar estratégia de busca (FASE 3) - incluindo dados estruturados!
       const strategyResponse = await fetch(`${API_BASE_URL}/api/research-flow/strategy/generate`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
           query: clarificationSession.query,
-          clarificationSummary: processData.data.summary
+          clarificationSummary: processData.data.summary,
+          structuredData: processData.data.structuredData // ← Suas respostas aplicadas!
         })
       });
 
