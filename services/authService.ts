@@ -70,20 +70,41 @@ class AuthService {
    * Login with email and password
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
+    // Timeout de 30 segundos para evitar espera indefinida
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Login failed' }));
-      throw new Error(error.error || 'Credenciais inválidas');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Login failed' }));
+        throw new Error(error.error || 'Credenciais inválidas');
+      }
+
+      const { data } = await response.json();
+      this.saveAuth(data);
+      return data;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      if (error.name === 'AbortError') {
+        throw new Error('Tempo de conexão esgotado. O servidor pode estar temporariamente indisponível.');
+      }
+
+      if (error.message.includes('Load failed') || error.message.includes('Failed to fetch')) {
+        throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão.');
+      }
+
+      throw error;
     }
-
-    const { data } = await response.json();
-    this.saveAuth(data);
-    return data;
   }
 
   /**
