@@ -1190,7 +1190,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Artigos P1</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {searchProgress.articlesByPriority.P1}
+                    {searchProgress.articlesByPriority?.P1 || 0}
                   </p>
                 </div>
                 <div>
