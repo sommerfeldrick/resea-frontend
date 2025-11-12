@@ -61,11 +61,11 @@ interface SearchStrategy {
     P2: Array<{ query: string; priority: string; expectedResults: number }>;
     P3: Array<{ query: string; priority: string; expectedResults: number }>;
   };
-  prioritizedSources: Array<{
-    name: string;
-    reason: string;
-    order: number;
-  }>;
+  keyTerms: {
+    primary: string[];      // Termos principais da pesquisa
+    specific: string[];     // Termos específicos/técnicos
+    methodological: string[]; // Tipos de estudo
+  };
   filters: {
     dateRange: { start: number; end: number };
     languages: string[];
@@ -928,7 +928,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     const p1Queries = Array.isArray(queries.P1) ? queries.P1 : [];
     const p2Queries = Array.isArray(queries.P2) ? queries.P2 : [];
     const p3Queries = Array.isArray(queries.P3) ? queries.P3 : [];
-    const sources = Array.isArray(searchStrategy.prioritizedSources) ? searchStrategy.prioritizedSources : [];
+    const keyTerms = searchStrategy.keyTerms || { primary: [], specific: [], methodological: [] };
     const filters = searchStrategy.filters || {};
     const dateRange = filters.dateRange || { start: 2020, end: 2025 };
 
@@ -1017,33 +1017,65 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               )}
             </div>
 
-            {/* Sources */}
-            {sources.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                  Fontes priorizadas:
-                </h3>
-                <ol className="space-y-2">
-                  {sources.map((source, idx) => (
-                    <li key={source.order || idx} className="flex items-start gap-2">
-                      <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                        {source.order || idx + 1}.
-                      </span>
-                      <div>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {source.name || 'Fonte desconhecida'}
+            {/* Key Terms */}
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                Termos-chave identificados:
+              </h3>
+              <div className="space-y-3">
+                {keyTerms.primary && keyTerms.primary.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                      • Principais:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {keyTerms.primary.map((term, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-sm"
+                        >
+                          {term}
                         </span>
-                        {source.reason && (
-                          <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">
-                            - {source.reason}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {keyTerms.specific && keyTerms.specific.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-2">
+                      • Específicos:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {keyTerms.specific.map((term, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-sm"
+                        >
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {keyTerms.methodological && keyTerms.methodological.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
+                      • Metodológicos:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {keyTerms.methodological.map((term, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm"
+                        >
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
