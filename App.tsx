@@ -6,6 +6,7 @@ import { ContentGenerationFlow } from './components/ContentGenerationFlow';
 import { UserDashboard } from './components/UserDashboard';
 import { AuthIntegration } from './components/AuthIntegration';
 import { ResearchWizard } from './components/ResearchWizard';
+import { DocumentsSidebar } from './components/DocumentsSidebar';
 import { LogoIcon, PlusIcon, BrainCircuitIcon, MoreHorizontalIcon } from './components/icons';
 import type { TaskPlan, CompletedResearch, MindMapData, ResearchResult } from './types';
 import { mockHistory } from './mockData';
@@ -124,6 +125,11 @@ const Sidebar: React.FC<{
                 <PlusIcon className="h-5 w-5" />
                 Novo Documento
             </button>
+
+            {/* Documents List - Scrollable area */}
+            <div className="flex-1 overflow-hidden mb-4">
+                <DocumentsSidebar />
+            </div>
 
             {/* Card de Perfil - Fixo no fim da sidebar */}
             <div className="absolute bottom-4 left-4 right-4">

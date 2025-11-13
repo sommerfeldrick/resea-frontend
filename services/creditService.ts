@@ -5,6 +5,7 @@
  */
 
 import { authService } from './authService';
+import type { CreditStats, CreditHistoryResponse } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -15,15 +16,9 @@ interface WordsUsage {
   packageName: string;
   percentage?: number;
   lastUpdated: Date;
-}
-
-interface CreditStatsResponse {
-  success: boolean;
-  plan: string;
-  limit: number;
-  consumed: number;
-  remaining: number;
-  percentage: number;
+  isActive?: boolean;
+  nextReset?: string;
+  purchaseDate?: string;
 }
 
 class CreditService {
@@ -59,7 +54,7 @@ class CreditService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: CreditStatsResponse = await response.json();
+      const data: CreditStats = await response.json();
 
       const usage: WordsUsage = {
         totalWords: data.limit,
@@ -67,6 +62,9 @@ class CreditService {
         remainingWords: data.remaining,
         packageName: data.plan,
         percentage: data.percentage,
+        isActive: data.is_active,
+        nextReset: data.next_reset,
+        purchaseDate: data.purchase_date,
         lastUpdated: new Date()
       };
 
@@ -172,6 +170,41 @@ class CreditService {
       await this.fetchCredits();
     } catch (error) {
       console.error('Erro ao inicializar créditos:', error);
+    }
+  }
+
+  /**
+   * Buscar histórico de uso de créditos
+   */
+  async getCreditHistory(limit: number = 50): Promise<CreditHistoryResponse> {
+    try {
+      const token = this.getAuthToken();
+      if (!token) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/research/credits/history?limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: CreditHistoryResponse = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar histórico de créditos:', error);
+
+      // Fallback: retorna histórico vazio
+      return {
+        success: false,
+        history: [],
+        count: 0
+      };
     }
   }
 }
