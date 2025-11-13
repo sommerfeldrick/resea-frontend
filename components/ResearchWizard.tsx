@@ -251,6 +251,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const [citationStyle, setCitationStyle] = useState<'abnt' | 'apa' | 'vancouver' | 'chicago'>('abnt');
   const [qualityVerification, setQualityVerification] = useState<QualityVerification | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Refs
   const contentEditorRef = useRef<HTMLTextAreaElement>(null);
@@ -723,9 +724,134 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     }
   };
 
+  const handleSaveDraft = async () => {
+    try {
+      setIsExporting(true);
+      const user = authService.getUser();
+
+      if (!user) {
+        alert('Você precisa estar logado para salvar o documento');
+        return;
+      }
+
+      const contentToSave = editingContent || generatedContent;
+
+      if (!contentToSave) {
+        alert('Nenhum conteúdo para salvar');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/documents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.accessToken}`
+        },
+        body: JSON.stringify({
+          title: query || 'Documento de Pesquisa',
+          content: contentToSave,
+          document_type: 'research',
+          research_query: query,
+          word_count: contentToSave.split(/\s+/).length,
+          file_format: exportFormat
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao salvar documento');
+      }
+
+      const data = await response.json();
+      alert('✅ Rascunho salvo com sucesso!\n\nVocê pode acessar seus documentos salvos no histórico.');
+
+    } catch (error) {
+      console.error('Erro ao salvar rascunho:', error);
+      alert('❌ Erro ao salvar rascunho. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExportDocument = async () => {
-    // In production, this would call an export endpoint
-    alert(`Exportando documento como ${exportFormat.toUpperCase()} com estilo ${citationStyle.toUpperCase()}`);
+    try {
+      setIsExporting(true);
+      const user = authService.getUser();
+
+      if (!user) {
+        alert('Você precisa estar logado para finalizar o documento');
+        return;
+      }
+
+      const contentToSave = editingContent || generatedContent;
+
+      if (!contentToSave) {
+        alert('Nenhum conteúdo para exportar');
+        return;
+      }
+
+      // Passo 1: Salvar o documento
+      const saveResponse = await fetch(`${API_BASE_URL}/api/documents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.accessToken}`
+        },
+        body: JSON.stringify({
+          title: query || 'Documento de Pesquisa',
+          content: contentToSave,
+          document_type: 'research',
+          research_query: query,
+          word_count: contentToSave.split(/\s+/).length,
+          file_format: exportFormat
+        })
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Erro ao salvar documento');
+      }
+
+      const savedDoc = await saveResponse.json();
+
+      // Passo 2: Finalizar e descontar créditos
+      const finalizeResponse = await fetch(`${API_BASE_URL}/api/research/finalize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.accessToken}`
+        },
+        body: JSON.stringify({
+          content: contentToSave,
+          title: query || 'Documento de Pesquisa',
+          documentId: savedDoc.data.id,
+          documentType: 'research',
+          metadata: {
+            format: exportFormat,
+            citationStyle: citationStyle,
+            wordCount: contentToSave.split(/\s+/).length
+          }
+        })
+      });
+
+      if (!finalizeResponse.ok) {
+        throw new Error('Erro ao finalizar documento');
+      }
+
+      const finalizeData = await finalizeResponse.json();
+
+      alert(
+        `✅ Documento finalizado com sucesso!\n\n` +
+        `📊 Documentos restantes: ${finalizeData.documentsRemaining || 'N/A'}\n` +
+        `📄 Formato: ${exportFormat.toUpperCase()}\n` +
+        `📚 Estilo de citação: ${citationStyle.toUpperCase()}\n\n` +
+        `O documento foi salvo e está disponível no seu histórico.`
+      );
+
+    } catch (error) {
+      console.error('Erro ao exportar documento:', error);
+      alert('❌ Erro ao exportar documento. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // ============================================
@@ -2046,17 +2172,50 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               )}
             </div>
 
-            {/* Export Button */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Save & Export Buttons */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+              {/* Save Draft Button (sem descontar créditos) */}
               <button
-                onClick={handleExportDocument}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700
+                onClick={handleSaveDraft}
+                disabled={isExporting}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700
+                         disabled:bg-gray-400 disabled:cursor-not-allowed
                          font-medium transition-colors flex items-center justify-center gap-2"
               >
-                Exportar Documento
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                {isExporting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    💾 Salvar Rascunho
+                    <span className="text-xs opacity-80">(não desconta créditos)</span>
+                  </>
+                )}
+              </button>
+
+              {/* Finalize Button (desconta créditos) */}
+              <button
+                onClick={handleExportDocument}
+                disabled={isExporting}
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700
+                         disabled:bg-gray-400 disabled:cursor-not-allowed
+                         font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Finalizando...
+                  </>
+                ) : (
+                  <>
+                    ✅ Finalizar e Descontar Créditos
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </>
+                )}
               </button>
             </div>
           </div>
