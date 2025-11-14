@@ -128,7 +128,13 @@ const Sidebar: React.FC<{
 
             {/* Documents List - Scrollable area */}
             <div className="flex-1 overflow-hidden mb-4">
-                <DocumentsSidebar />
+                <DocumentsSidebar
+                    onSelectDocument={(documentId) => {
+                        console.log('Documento selecionado:', documentId);
+                        // TODO: Implementar abertura do documento no editor
+                        alert('Funcionalidade de edição em desenvolvimento.\nDocumento ID: ' + documentId);
+                    }}
+                />
             </div>
 
             {/* Card de Perfil - Fixo no fim da sidebar */}

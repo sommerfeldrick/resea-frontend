@@ -47,10 +47,12 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
     setIsDownloading(true);
     setMenuOpen(false);
     try {
+      console.log('Iniciando download do documento:', document.id);
       await onDownload(document.id);
-    } catch (error) {
+      console.log('Download concluído com sucesso');
+    } catch (error: any) {
       console.error('Erro ao baixar documento:', error);
-      alert('Erro ao baixar documento');
+      alert('❌ Erro ao baixar documento:\n' + (error.message || 'Erro desconhecido'));
     } finally {
       setIsDownloading(false);
     }
@@ -58,8 +60,12 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
 
   const handleOpen = () => {
     setMenuOpen(false);
+    console.log('Abrindo documento:', document.id, document.title);
     if (onSelect) {
       onSelect(document.id);
+    } else {
+      console.warn('onSelect não está definido - função de abertura não disponível');
+      alert('Funcionalidade de abertura não está disponível no momento.');
     }
   };
 
@@ -82,7 +88,7 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
           style={{
             fontSize: '13px',
             fontWeight: '500',
-            color: 'rgba(255, 255, 255, 0.9)',
+            color: '#ffffff',
             margin: 0,
             flex: 1,
             minWidth: 0,
@@ -121,7 +127,7 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            ⋮
+            ...
           </button>
 
           {/* Dropdown Menu */}
@@ -410,43 +416,19 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
       {/* Header */}
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           marginBottom: '20px'
         }}
       >
         <h3
           style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#fff',
+            fontSize: '14px',
+            fontWeight: '400',
+            color: 'rgba(255, 255, 255, 0.7)',
             margin: 0
           }}
         >
-          Documentos Gerados
+          Histórico
         </h3>
-        <button
-          onClick={loadDocuments}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '11px',
-            fontWeight: '500',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            transition: 'all 0.2s ease'
-          }}
-          title="Atualizar lista"
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
-        >
-          Atualizar
-        </button>
       </div>
 
       {/* Document Groups */}
