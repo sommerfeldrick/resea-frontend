@@ -26,11 +26,13 @@ interface DocumentItemProps {
 function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!confirm('Deseja realmente deletar este documento?')) return;
 
     setIsDeleting(true);
+    setMenuOpen(false);
     try {
       await onDelete(document.id);
     } catch (error) {
@@ -43,6 +45,7 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
 
   const handleDownload = async () => {
     setIsDownloading(true);
+    setMenuOpen(false);
     try {
       await onDownload(document.id);
     } catch (error) {
@@ -53,111 +56,174 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
     }
   };
 
+  const handleOpen = () => {
+    setMenuOpen(false);
+    if (onSelect) {
+      onSelect(document.id);
+    }
+  };
+
   return (
     <div
       className="document-item"
       style={{
-        padding: '12px',
-        borderRadius: '8px',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        marginBottom: '8px',
-        cursor: onSelect ? 'pointer' : 'default',
+        padding: '12px 16px',
+        borderRadius: '6px',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        marginBottom: '6px',
         transition: 'all 0.2s ease',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        position: 'relative'
       }}
-      onClick={() => onSelect?.(document.id)}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h5
-            style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#fff',
-              marginBottom: '4px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}
-            title={document.title}
-          >
-            {document.title}
-          </h5>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)' }}>
-            {document.word_count.toLocaleString('pt-BR')} palavras • {formatDocumentType(document.document_type)}
-          </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', marginTop: '2px' }}>
-            {formatDate(document.created_at)}
-          </div>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Título */}
+        <h5
+          style={{
+            fontSize: '13px',
+            fontWeight: '500',
+            color: 'rgba(255, 255, 255, 0.9)',
+            margin: 0,
+            flex: 1,
+            minWidth: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            paddingRight: '12px',
+            cursor: 'pointer'
+          }}
+          title={document.title}
+          onClick={handleOpen}
+        >
+          {document.title}
+        </h5>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
+        {/* Menu 3 pontinhos */}
+        <div style={{ position: 'relative' }}>
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDownload();
+              setMenuOpen(!menuOpen);
             }}
-            disabled={isDownloading}
+            disabled={isDeleting || isDownloading}
             style={{
-              padding: '6px 10px',
-              backgroundColor: 'rgba(59, 130, 246, 0.15)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
+              padding: '4px 8px',
+              backgroundColor: 'transparent',
+              border: 'none',
               borderRadius: '4px',
-              cursor: isDownloading ? 'wait' : 'pointer',
-              fontSize: '11px',
-              fontWeight: '500',
-              color: '#60a5fa',
+              cursor: 'pointer',
+              fontSize: '18px',
+              color: 'rgba(255, 255, 255, 0.6)',
               transition: 'all 0.2s ease',
-              opacity: isDownloading ? 0.5 : 1,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              lineHeight: 1
             }}
-            title="Baixar documento"
+            title="Opções"
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            {isDownloading ? 'Baixando...' : 'Baixar'}
+            ⋮
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-            disabled={isDeleting}
-            style={{
-              padding: '6px 10px',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '4px',
-              cursor: isDeleting ? 'wait' : 'pointer',
-              fontSize: '11px',
-              fontWeight: '500',
-              color: '#f87171',
-              transition: 'all 0.2s ease',
-              opacity: isDeleting ? 0.5 : 1,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}
-            title="Deletar documento"
-          >
-            {isDeleting ? 'Deletando...' : 'Deletar'}
-          </button>
+
+          {/* Dropdown Menu */}
+          {menuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '4px',
+                backgroundColor: '#1a1a1a',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                zIndex: 1000,
+                minWidth: '140px',
+                overflow: 'hidden'
+              }}
+            >
+              <button
+                onClick={handleOpen}
+                disabled={isDeleting || isDownloading}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '13px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                Abrir
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={isDeleting || isDownloading}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: '13px',
+                  textAlign: 'left',
+                  cursor: isDownloading ? 'wait' : 'pointer',
+                  transition: 'background-color 0.2s ease',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                {isDownloading ? 'Baixando...' : 'Baixar'}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting || isDownloading}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  color: '#f87171',
+                  fontSize: '13px',
+                  textAlign: 'left',
+                  cursor: isDeleting ? 'wait' : 'pointer',
+                  transition: 'background-color 0.2s ease',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                {isDeleting ? 'Deletando...' : 'Deletar'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Click outside to close menu */}
+      {menuOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999
+          }}
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+
       <style>{`
         .document-item:hover {
-          background-color: rgba(255, 255, 255, 0.08) !important;
-          border-color: rgba(255, 255, 255, 0.2) !important;
-        }
-
-        .document-item button:hover:not(:disabled) {
-          opacity: 1;
-          background-color: rgba(59, 130, 246, 0.25);
-        }
-
-        .document-item button:last-child:hover:not(:disabled) {
-          background-color: rgba(239, 68, 68, 0.25);
+          background-color: rgba(255, 255, 255, 0.06) !important;
+          border-color: rgba(255, 255, 255, 0.12) !important;
         }
       `}</style>
     </div>
