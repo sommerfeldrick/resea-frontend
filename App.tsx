@@ -61,11 +61,12 @@ const Sidebar: React.FC<{
     onNewSearch: () => void;
     onSelectHistory: (id: string) => void;
     onDeleteHistory: (id: string) => void;
+    onSelectDocument: (documentId: number) => void;
     activeItemId: string | null;
     history: CompletedResearch[];
     isCollapsed: boolean;
     onToggleCollapse: () => void;
-}> = ({ onNewSearch, onSelectHistory, onDeleteHistory, activeItemId, history, isCollapsed, onToggleCollapse }) => {
+}> = ({ onNewSearch, onSelectHistory, onDeleteHistory, onSelectDocument, activeItemId, history, isCollapsed, onToggleCollapse }) => {
     const { user, logout } = useAuth();
     const [showProfileMenu, setShowProfileMenu] = React.useState(false);
 
@@ -129,7 +130,7 @@ const Sidebar: React.FC<{
             {/* Documents List - Scrollable area */}
             <div className="flex-1 overflow-hidden mb-4">
                 <DocumentsSidebar
-                    onSelectDocument={handleOpenDocument}
+                    onSelectDocument={onSelectDocument}
                 />
             </div>
 
@@ -469,6 +470,7 @@ const AppContent: React.FC = () => {
           onNewSearch={handleNewSearch}
           onSelectHistory={handleSelectHistory}
           onDeleteHistory={handleDeleteHistory}
+          onSelectDocument={handleOpenDocument}
           activeItemId={getActiveItemId()}
           history={history}
           isCollapsed={sidebarCollapsed}
