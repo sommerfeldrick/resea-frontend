@@ -73,39 +73,41 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
     <div
       className="document-item"
       style={{
-        padding: '12px 16px',
+        padding: '8px 12px',
         borderRadius: '6px',
         backgroundColor: 'rgba(255, 255, 255, 0.03)',
-        marginBottom: '6px',
+        marginBottom: '4px',
         transition: 'all 0.2s ease',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         position: 'relative'
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {/* Título */}
-        <h5
-          style={{
-            fontSize: '13px',
-            fontWeight: '500',
-            color: '#1a1a1a',
-            margin: 0,
-            flex: 1,
-            minWidth: 0,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            paddingRight: '12px',
-            cursor: 'pointer'
-          }}
-          title={document.title}
-          onClick={handleOpen}
-        >
-          {document.title}
-        </h5>
+        {/* Marcador + Título */}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          <span style={{ color: '#1a1a1a', fontSize: '16px', marginRight: '8px', flexShrink: 0 }}>•</span>
+          <h5
+            style={{
+              fontSize: '13px',
+              fontWeight: '500',
+              color: '#1a1a1a',
+              margin: 0,
+              flex: 1,
+              minWidth: 0,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              cursor: 'pointer'
+            }}
+            title={document.title}
+            onClick={handleOpen}
+          >
+            {document.title}
+          </h5>
+        </div>
 
         {/* Menu 3 pontinhos */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', flexShrink: 0, marginLeft: '4px' }}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -113,18 +115,18 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
             }}
             disabled={isDeleting || isDownloading}
             style={{
-              padding: '4px 8px',
+              padding: '4px 6px',
               backgroundColor: 'transparent',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              fontSize: '18px',
-              color: 'rgba(255, 255, 255, 0.6)',
+              fontSize: '16px',
+              color: '#1a1a1a',
               transition: 'all 0.2s ease',
               lineHeight: 1
             }}
             title="Opções"
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             ...
@@ -248,13 +250,13 @@ function DocumentGroup({ title, documents, onDelete, onDownload, onSelect }: Doc
   if (documents.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '24px' }}>
+    <div style={{ marginBottom: '16px' }}>
       <h4
         style={{
-          fontSize: '12px',
+          fontSize: '11px',
           fontWeight: '600',
-          color: 'rgba(255, 255, 255, 0.5)',
-          marginBottom: '12px',
+          color: '#1a1a1a',
+          marginBottom: '8px',
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}
@@ -300,9 +302,6 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
   useEffect(() => {
     loadDocuments();
 
-    // Atualizar a cada 30 segundos para detectar novos documentos rapidamente
-    const interval = setInterval(loadDocuments, 30 * 1000);
-
     // Escutar evento de documento salvo para atualizar imediatamente
     const handleDocumentSaved = () => {
       console.log('📄 Documento salvo - atualizando sidebar...');
@@ -312,7 +311,6 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
     window.addEventListener('documentSaved', handleDocumentSaved);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('documentSaved', handleDocumentSaved);
     };
   }, []);
@@ -327,33 +325,7 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
   };
 
   if (loading) {
-    return (
-      <div
-        style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: 'rgba(255, 255, 255, 0.6)'
-        }}
-      >
-        <div className="spinner" style={{ margin: '0 auto' }}></div>
-        <div style={{ marginTop: '12px' }}>Carregando documentos...</div>
-
-        <style>{`
-          .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
-
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+    return null; // Não mostrar nada enquanto carrega
   }
 
   if (error) {
@@ -413,17 +385,26 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
         padding: '16px'
       }}
     >
+      {/* Divisor */}
+      <div
+        style={{
+          height: '1px',
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+          marginBottom: '16px'
+        }}
+      />
+
       {/* Header */}
       <div
         style={{
-          marginBottom: '20px'
+          marginBottom: '16px'
         }}
       >
         <h3
           style={{
             fontSize: '14px',
-            fontWeight: '400',
-            color: 'rgba(255, 255, 255, 0.7)',
+            fontWeight: '600',
+            color: '#1a1a1a',
             margin: 0
           }}
         >
