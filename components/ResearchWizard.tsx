@@ -1476,11 +1476,68 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
             </div>
           )}
         </div>
+
+        {/* Preview de Artigos Encontrados */}
+        {articles.length > 0 && (
+          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+              Artigos Mais Relevantes Encontrados ({articles.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
+              {articles.slice(0, 10).map((article) => (
+                <div
+                  key={article.id}
+                  className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className={`text-xs px-2 py-1 rounded font-medium ${
+                      article.score.priority === 'P1'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                        : article.score.priority === 'P2'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                    }`}>
+                      {article.score.priority} • Score {article.score.score.toFixed(1)}
+                    </span>
+                    {article.hasFulltext && (
+                      <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 px-2 py-1 rounded">
+                        📄 Texto completo
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-2 line-clamp-2">
+                    {article.title}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    {article.authors.slice(0, 3).join(', ')}{article.authors.length > 3 ? ' et al.' : ''}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500">
+                    <span>{article.year}</span>
+                    {article.journalInfo && (
+                      <>
+                        <span>•</span>
+                        <span className="line-clamp-1">{article.journalInfo}</span>
+                      </>
+                    )}
+                  </div>
+                  {article.abstract && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-3">
+                      {article.abstract}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   const renderPhase5Analysis = () => {
+    const [expandedNode, setExpandedNode] = useState<string | null>(null);
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
     if (!knowledgeGraph) {
       return (
         <div className="max-w-4xl mx-auto p-8">
@@ -1493,6 +1550,18 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         </div>
       );
     }
+
+    const handleNodeClick = (nodeId: string) => {
+      setExpandedNode(expandedNode === nodeId ? null : nodeId);
+      info(`Tema "${knowledgeGraph.nodes.find(n => n.id === nodeId)?.label}" selecionado`);
+    };
+
+    const getNodeArticles = (nodeId: string) => {
+      const node = knowledgeGraph.nodes.find(n => n.id === nodeId);
+      if (!node) return [];
+      // Retorna artigos relacionados ao tema (mockado por enquanto)
+      return articles.slice(0, node.articleCount || 3);
+    };
 
     return (
       <div className="max-w-6xl mx-auto p-8">
@@ -1515,28 +1584,74 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
           <div className="space-y-6">
             {/* Knowledge Graph Visualization (Simplified) */}
-            <div className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-                Temas Principais ({knowledgeGraph.nodes.length} nós, {knowledgeGraph.edges.length} conexões)
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {knowledgeGraph.nodes.slice(0, 12).map((node) => (
-                  <div
-                    key={node.id}
-                    className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                      node.type === 'main'
-                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
-                        : node.type === 'sub'
-                        ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-300 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <p className="font-medium text-gray-900 dark:text-white text-sm">
-                      {node.label}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {node.articleCount} artigos
-                    </p>
+            <div className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Temas Principais ({knowledgeGraph.nodes.length} nós, {knowledgeGraph.edges.length} conexões)
+                </h3>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Clique em um tema para expandir
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {knowledgeGraph.nodes.slice(0, 16).map((node) => (
+                  <div key={node.id} className="relative">
+                    <div
+                      onClick={() => handleNodeClick(node.id)}
+                      onMouseEnter={() => setHoveredNode(node.id)}
+                      onMouseLeave={() => setHoveredNode(null)}
+                      className={`p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                        expandedNode === node.id
+                          ? 'ring-2 ring-indigo-500 scale-105'
+                          : hoveredNode === node.id
+                          ? 'scale-105 shadow-lg'
+                          : ''
+                      } ${
+                        node.type === 'main'
+                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40'
+                          : node.type === 'sub'
+                          ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+                          : 'border-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm flex-1">
+                          {node.label}
+                        </p>
+                        {expandedNode === node.id && (
+                          <span className="text-indigo-600 dark:text-indigo-400 ml-1">▼</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        📚 {node.articleCount} artigos
+                      </p>
+                      {hoveredNode === node.id && (
+                        <div className="absolute z-10 mt-2 p-2 bg-gray-900 text-white text-xs rounded shadow-xl -top-8 left-0 right-0">
+                          Clique para ver artigos relacionados
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expanded Node - Article List */}
+                    {expandedNode === node.id && (
+                      <div className="mt-2 p-3 bg-white dark:bg-gray-800 border border-indigo-300 dark:border-indigo-700 rounded-lg shadow-lg">
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-white mb-2">
+                          Artigos sobre "{node.label}":
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {getNodeArticles(node.id).map((article) => (
+                            <div key={article.id} className="text-xs">
+                              <p className="font-medium text-gray-800 dark:text-gray-200 line-clamp-1">
+                                {article.title}
+                              </p>
+                              <p className="text-gray-600 dark:text-gray-400">
+                                {article.authors[0]} ({article.year})
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
