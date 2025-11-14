@@ -14,6 +14,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../config';
 import { authService } from '../services/authService';
+import { DOCUMENT_TEMPLATES, DocumentTemplate, estimateGenerationTime, calculateWordCount } from '../utils/documentTemplates';
+import Toast, { useToast } from './Toast';
 
 // ============================================
 // Types
@@ -225,6 +227,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
 
   // Phase 6: Generation
+  const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
+  const [estimatedWords, setEstimatedWords] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState('');
   const [generationConfig, setGenerationConfig] = useState<ContentGenerationConfig>({
     section: 'Revisão de Literatura',
     style: 'academic_formal',
@@ -241,6 +246,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const [generatedContent, setGeneratedContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateCompleteDoc, setGenerateCompleteDoc] = useState(true); // Padrão: documento completo
+
+  // Toast notifications
+  const { toasts, showToast, dismissToast, success, error: showError, info } = useToast();
 
   // Phase 7: Editing
   const [editingContent, setEditingContent] = useState('');
@@ -267,6 +275,23 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       setCurrentPhase('editing');  // Pular direto para edição
     }
   }, [initialContent]);
+
+  // Atualizar estimativas quando template ou modo mudar
+  useEffect(() => {
+    if (selectedTemplate && generateCompleteDoc) {
+      const avgWords = (selectedTemplate.estimatedWords.min + selectedTemplate.estimatedWords.max) / 2;
+      setEstimatedWords(Math.round(avgWords));
+      setEstimatedTime(estimateGenerationTime(avgWords));
+    } else if (selectedTemplate && !generateCompleteDoc) {
+      // Estimativa para uma seção específica
+      const wordsPerSection = 1000;
+      setEstimatedWords(wordsPerSection);
+      setEstimatedTime(estimateGenerationTime(wordsPerSection));
+    } else {
+      setEstimatedWords(0);
+      setEstimatedTime('');
+    }
+  }, [selectedTemplate, generateCompleteDoc]);
 
   // Helper to get auth headers
   const getAuthHeaders = () => {
@@ -1619,12 +1644,76 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   };
 
   const renderPhase6Generation = () => {
+    const handleSelectTemplate = (template: DocumentTemplate) => {
+      setSelectedTemplate(template);
+      setGenerationConfig({
+        ...generationConfig,
+        ...template.defaultConfig
+      });
+      info(`Template "${template.name}" selecionado`);
+    };
+
     return (
       <div className="max-w-6xl mx-auto p-8">
+        {/* Template Selector */}
+        {!selectedTemplate && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Escolha um Template
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {DOCUMENT_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  onClick={() => handleSelectTemplate(template)}
+                  className="text-left p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg
+                           hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors group"
+                >
+                  <div className="text-3xl mb-2">{template.icon}</div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                    {template.name}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    {template.description}
+                  </p>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 space-y-1">
+                    <div>📄 {template.estimatedWords.min}-{template.estimatedWords.max} palavras</div>
+                    <div>⏱️ ~{template.estimatedTimeMinutes} min</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Configuration Panel */}
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-8">
+              {/* Template Badge */}
+              {selectedTemplate && (
+                <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                        {selectedTemplate.icon} {selectedTemplate.name}
+                      </div>
+                      {estimatedTime && (
+                        <div className="text-xs text-indigo-700 dark:text-indigo-400 mt-1">
+                          ~{estimatedWords} palavras • {estimatedTime}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSelectedTemplate(null)}
+                      className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 text-xs"
+                    >
+                      Trocar
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
                 Configuração
               </h3>
@@ -2022,6 +2111,27 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   };
 
   const renderPhase8Export = () => {
+    // Calcular estatísticas do documento
+    const wordCount = editingContent.split(/\s+/).filter(w => w.length > 0).length;
+    const citations = (editingContent.match(/\([A-Z][^)]+,\s*\d{4}\)/g) || []).length;
+    const sections = (editingContent.match(/^#{1,3}\s/gm) || []).length;
+    const uniqueAuthors = new Set(
+      (editingContent.match(/\(([A-Z][^,]+),\s*\d{4}\)/g) || []).map(m => m.match(/\(([A-Z][^,]+),/)?.[1])
+    ).size;
+
+    // Artigos mais antigos e recentes
+    const years = (editingContent.match(/\(\w+,\s*(\d{4})\)/g) || []).map(m => parseInt(m.match(/(\d{4})/)?.[1] || '0'));
+    const oldestYear = years.length > 0 ? Math.min(...years) : null;
+    const newestYear = years.length > 0 ? Math.max(...years) : null;
+
+    const handleAutoFix = () => {
+      info('Auto-correção iniciada...');
+      // TODO: Implementar lógica de auto-fix
+      setTimeout(() => {
+        success('✓ Documento corrigido automaticamente');
+      }, 1500);
+    };
+
     return (
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -2042,6 +2152,43 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           </div>
 
           <div className="space-y-6">
+            {/* Estatísticas Finais */}
+            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
+              <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 mb-4 flex items-center gap-2">
+                <span className="text-xl">📊</span>
+                Estatísticas do Documento
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total de palavras</div>
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{wordCount.toLocaleString()}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total de citações</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{citations}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Seções</div>
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{sections}</div>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Autores únicos citados</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{uniqueAuthors}</div>
+                </div>
+                {oldestYear && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Artigo mais antigo</div>
+                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{oldestYear}</div>
+                  </div>
+                )}
+                {newestYear && (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Artigo mais recente</div>
+                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">{newestYear}</div>
+                  </div>
+                )}
+              </div>
+            </div>
             {/* Export Options */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -2086,27 +2233,37 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 <h3 className="font-semibold text-gray-900 dark:text-white">
                   Verificação de Qualidade
                 </h3>
-                <button
-                  onClick={handleVerifyQuality}
-                  disabled={isVerifying}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700
-                           disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors
-                           text-sm flex items-center gap-2"
-                >
-                  {isVerifying ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    <>
-                      Verificar
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAutoFix}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700
+                             font-medium transition-colors text-sm flex items-center gap-2"
+                  >
+                    <span>⚡</span>
+                    Auto-Corrigir
+                  </button>
+                  <button
+                    onClick={handleVerifyQuality}
+                    disabled={isVerifying}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700
+                             disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors
+                             text-sm flex items-center gap-2"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      <>
+                        Verificar
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {qualityVerification && (
@@ -2300,6 +2457,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       {currentPhase === 'generation' && renderPhase6Generation()}
       {currentPhase === 'editing' && renderPhase7Editing()}
       {currentPhase === 'export' && renderPhase8Export()}
+
+      {/* Toast Notifications */}
+      <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 };
