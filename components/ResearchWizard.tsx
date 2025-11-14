@@ -350,13 +350,29 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         body: JSON.stringify({ query })
       });
 
-      if (!response.ok) throw new Error('Falha ao gerar perguntas');
+      if (!response.ok) {
+        // Tratar erro de autenticação especificamente
+        if (response.status === 401 || response.status === 403) {
+          const errorData = await response.json().catch(() => null);
+          if (errorData?.code === 'AUTH_TOKEN_MISSING' || errorData?.code === 'AUTH_TOKEN_INVALID') {
+            setError('Sua sessão expirou. Por favor, faça login novamente.');
+            // Redirecionar para login após 2 segundos
+            setTimeout(() => {
+              window.location.href = 'https://smileai.com.br/login?return=' + encodeURIComponent(window.location.href);
+            }, 2000);
+            return;
+          }
+        }
+
+        throw new Error('Falha ao gerar perguntas de clarificação');
+      }
 
       const data = await response.json();
       setClarificationSession(data.data);
       setCurrentPhase('clarification');
     } catch (err: any) {
-      setError(err.message || 'Erro ao iniciar pesquisa');
+      console.error('Erro ao iniciar pesquisa:', err);
+      setError(err.message || 'Erro ao iniciar pesquisa. Verifique sua conexão e tente novamente.');
     } finally {
       setIsLoading(false);
     }
