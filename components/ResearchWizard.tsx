@@ -16,6 +16,8 @@ import { API_BASE_URL } from '../config';
 import { authService } from '../services/authService';
 import { DOCUMENT_TEMPLATES, DocumentTemplate, estimateGenerationTime, calculateWordCount } from '../utils/documentTemplates';
 import Toast, { useToast } from './Toast';
+import { useAutoSave } from '../hooks/useAutoSave';
+import { AutoSaveIndicator } from './AutoSaveIndicator';
 
 // ============================================
 // Types
@@ -249,6 +251,30 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
   // Toast notifications
   const { toasts, showToast, dismissToast, success, error: showError, info } = useToast();
+
+  // Auto-save
+  const handleAutoSave = async (content: string) => {
+    // Salva o conteúdo em localStorage como draft
+    const draftKey = `resea_draft_${query || 'untitled'}`;
+    localStorage.setItem(draftKey, JSON.stringify({
+      content,
+      timestamp: new Date().toISOString(),
+      phase: currentPhase
+    }));
+  };
+
+  const autoSave = useAutoSave(editingContent || generatedContent, {
+    interval: 30000, // 30 segundos
+    enabled: currentPhase === 'editing' || currentPhase === 'generation',
+    onSave: handleAutoSave,
+    onSuccess: () => {
+      // Não mostrar toast para não incomodar o usuário
+      console.log('✓ Auto-save successful');
+    },
+    onError: (error) => {
+      console.error('Auto-save failed:', error);
+    }
+  });
 
   // Phase 7: Editing
   const [editingContent, setEditingContent] = useState('');
@@ -2048,18 +2074,30 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    Preview do Conteúdo
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {generatedContent.length} caracteres • ~{Math.round(generatedContent.split(' ').length)} palavras
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Preview do Conteúdo
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {generatedContent.length} caracteres • ~{Math.round(generatedContent.split(' ').length)} palavras
+                      </p>
+                    </div>
+                    {(generatedContent || isGenerating) && (
+                      <AutoSaveIndicator
+                        isSaving={autoSave.isSaving}
+                        hasUnsavedChanges={autoSave.hasUnsavedChanges}
+                        getTimeSinceLastSave={autoSave.getTimeSinceLastSave}
+                        saveNow={autoSave.saveNow}
+                      />
+                    )}
+                  </div>
                 </div>
                 {generatedContent && !isGenerating && (
                   <button
                     onClick={handleProceedToEditing}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
+                    className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
                              font-medium transition-colors text-sm flex items-center gap-2"
                   >
                     Editar
@@ -2108,17 +2146,27 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">
-                    Editor Interativo
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Selecione texto para editar, expandir, ou adicionar citações
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Editor Interativo
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        Selecione texto para editar, expandir, ou adicionar citações
+                      </p>
+                    </div>
+                    <AutoSaveIndicator
+                      isSaving={autoSave.isSaving}
+                      hasUnsavedChanges={autoSave.hasUnsavedChanges}
+                      getTimeSinceLastSave={autoSave.getTimeSinceLastSave}
+                      saveNow={autoSave.saveNow}
+                    />
+                  </div>
                 </div>
                 <button
                   onClick={handleProceedToExport}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
+                  className="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
                            font-medium transition-colors text-sm flex items-center gap-2"
                 >
                   Finalizar
