@@ -12,6 +12,11 @@
   },
   "dependencies": {
     "@google/genai": "^1.26.0",
+    "@tiptap/extension-character-count": "^3.10.7",
+    "@tiptap/extension-link": "^3.10.7",
+    "@tiptap/extension-placeholder": "^3.10.7",
+    "@tiptap/react": "^3.10.7",
+    "@tiptap/starter-kit": "^3.10.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "reactflow": "^11.11.4"

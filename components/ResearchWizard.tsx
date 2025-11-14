@@ -18,6 +18,7 @@ import { DOCUMENT_TEMPLATES, DocumentTemplate, estimateGenerationTime, calculate
 import Toast, { useToast } from './Toast';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
+import { RichTextEditor } from './RichTextEditor';
 
 // ============================================
 // Types
@@ -2176,16 +2177,27 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 </button>
               </div>
 
-              <textarea
-                ref={contentEditorRef}
-                value={editingContent}
-                onChange={(e) => setEditingContent(e.target.value)}
-                onMouseUp={handleTextSelection}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg
-                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                         focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                         resize-none font-mono text-sm"
-                rows={25}
+              <RichTextEditor
+                content={editingContent}
+                onChange={setEditingContent}
+                onTextSelection={(text) => {
+                  setSelectedText(text);
+                  if (text.length > 0) {
+                    // Show edit menu on text selection
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                      const range = selection.getRangeAt(0);
+                      const rect = range.getBoundingClientRect();
+                      setEditMenuPosition({
+                        x: rect.left + rect.width / 2,
+                        y: rect.top
+                      });
+                      setShowEditMenu(true);
+                    }
+                  } else {
+                    setShowEditMenu(false);
+                  }
+                }}
                 placeholder="O conteúdo editável aparecerá aqui..."
               />
 
