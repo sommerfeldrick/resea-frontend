@@ -2255,26 +2255,55 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 Artigos Disponíveis
               </h3>
               <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <p className="text-xs text-gray-500 dark:text-gray-500 mb-3 italic">
+                  💡 Arraste um artigo para o editor para inserir uma citação
+                </p>
                 {articles.slice(0, 10).map((article) => (
                   <div
                     key={article.id}
-                    className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-300 cursor-pointer"
+                    draggable
+                    onDragStart={(e) => {
+                      // Format citation data
+                      const firstAuthor = article.authors[0]?.split(' ').pop() || 'Autor';
+                      const citation = article.authors.length > 1
+                        ? `(${firstAuthor} et al., ${article.year})`
+                        : `(${firstAuthor}, ${article.year})`;
+
+                      e.dataTransfer.setData('text/plain', citation);
+                      e.dataTransfer.setData('application/json', JSON.stringify({
+                        type: 'citation',
+                        article: {
+                          id: article.id,
+                          title: article.title,
+                          authors: article.authors,
+                          year: article.year,
+                          citation
+                        }
+                      }));
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-300 cursor-grab active:cursor-grabbing transition-all hover:shadow-md"
                   >
-                    <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
-                      {article.title}
-                    </h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                      {article.authors.slice(0, 2).join(', ')} ({article.year})
-                    </p>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      article.score.priority === 'P1'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                        : article.score.priority === 'P2'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                    }`}>
-                      {article.score.priority} - Score {article.score.score}
-                    </span>
+                    <div className="flex items-start gap-2">
+                      <span className="text-gray-400 dark:text-gray-600 text-lg">⋮⋮</span>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                          {article.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          {article.authors.slice(0, 2).join(', ')}{article.authors.length > 2 ? ' et al.' : ''} ({article.year})
+                        </p>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          article.score.priority === 'P1'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                            : article.score.priority === 'P2'
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                        }`}>
+                          {article.score.priority} - Score {article.score.score}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

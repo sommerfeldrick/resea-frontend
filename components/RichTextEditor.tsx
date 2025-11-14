@@ -23,6 +23,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onTextSelection,
   placeholder = 'Comece a escrever seu documento acadêmico...'
 }) => {
+  const [isDragOver, setIsDragOver] = React.useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -45,6 +47,41 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorProps: {
       attributes: {
         class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[600px] px-4 py-3'
+      },
+      handleDrop: (view, event, slice, moved) => {
+        // Check if dropping a citation
+        const citationData = event.dataTransfer?.getData('application/json');
+
+        if (citationData) {
+          try {
+            const data = JSON.parse(citationData);
+
+            if (data.type === 'citation' && data.article) {
+              // Prevent default drop behavior
+              event.preventDefault();
+
+              // Get the position where the drop occurred
+              const coordinates = {
+                left: event.clientX,
+                top: event.clientY
+              };
+              const pos = view.posAtCoords(coordinates);
+
+              if (pos) {
+                // Insert the citation at the drop position
+                const citation = data.article.citation;
+                const transaction = view.state.tr.insertText(citation, pos.pos);
+                view.dispatch(transaction);
+
+                return true; // Handled
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing citation data:', error);
+          }
+        }
+
+        return false; // Not handled, let TipTap handle it
       }
     },
     onUpdate: ({ editor }) => {
@@ -93,7 +130,27 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   );
 
   return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 overflow-hidden">
+    <div
+      className={`border ${isDragOver ? 'border-indigo-500 border-2 ring-2 ring-indigo-200 dark:ring-indigo-800' : 'border-gray-300 dark:border-gray-600'} rounded-lg bg-white dark:bg-gray-700 overflow-hidden transition-all`}
+      onDragOver={(e) => {
+        const data = e.dataTransfer.types.includes('application/json');
+        if (data) {
+          e.preventDefault();
+          setIsDragOver(true);
+        }
+      }}
+      onDragLeave={() => setIsDragOver(false)}
+      onDrop={() => setIsDragOver(false)}
+    >
+      {/* Drag Indicator */}
+      {isDragOver && (
+        <div className="bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 text-center">
+          <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">
+            📎 Solte aqui para inserir a citação
+          </span>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="border-b border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-2 flex flex-wrap gap-1">
         {/* Text formatting */}
