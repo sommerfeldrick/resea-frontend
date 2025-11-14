@@ -49,9 +49,9 @@ export interface AuthResponse {
 
 // Cache configuration
 const CACHE_TTL = 30 * 1000; // 30 seconds
-// Cache global compartilhado entre todas as instâncias
-if (!(global as any).cache) {
-  (global as any).cache = new Map<string, {data: any, timestamp: number}>();
+// Cache global compartilhado entre todas as instâncias (usando globalThis para compatibilidade browser)
+if (typeof globalThis !== 'undefined' && !(globalThis as any).authServiceCache) {
+  (globalThis as any).authServiceCache = new Map<string, {data: any, timestamp: number}>();
 }
 
 // Plan configuration
@@ -166,7 +166,12 @@ class AuthService {
    * Cache wrapper
    */
   private async withCache<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
-    const cache = (global as any).cache;
+    const cache = (globalThis as any).authServiceCache;
+    if (!cache) {
+      // Se o cache não existe, apenas buscar os dados sem cachear
+      return await fetchFn();
+    }
+
     const cached = cache.get(key);
     const now = Date.now();
 
@@ -445,7 +450,9 @@ class AuthService {
    * Clear cache for a specific key or all cache if no key is provided
    */
   private clearCache(key?: string): void {
-    const cache = (global as any).cache;
+    const cache = (globalThis as any).authServiceCache;
+    if (!cache) return; // Se o cache não existe, não há nada para limpar
+
     if (key) {
       cache.delete(key);
     } else {
