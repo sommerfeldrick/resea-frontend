@@ -88,7 +88,7 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
           style={{
             fontSize: '13px',
             fontWeight: '500',
-            color: '#ffffff',
+            color: '#1a1a1a',
             margin: 0,
             flex: 1,
             minWidth: 0,

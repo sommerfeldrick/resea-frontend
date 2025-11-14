@@ -187,11 +187,13 @@ interface QualityVerification {
 interface ResearchWizardProps {
   initialQuery?: string;
   initialClarificationSession?: ClarificationSession | null;
+  initialContent?: string;  // Conteúdo pré-carregado para edição
 }
 
 export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   initialQuery = '',
-  initialClarificationSession = null
+  initialClarificationSession = null,
+  initialContent = ''
 }) => {
   // Phase management - start at Phase 2 if clarification session provided
   const [currentPhase, setCurrentPhase] = useState<WizardPhase>(
@@ -255,6 +257,16 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
   // Refs
   const contentEditorRef = useRef<HTMLTextAreaElement>(null);
+
+  // Carregar conteúdo inicial se fornecido (para edição de documento existente)
+  useEffect(() => {
+    if (initialContent) {
+      console.log('📝 Carregando documento existente para edição');
+      setGeneratedContent(initialContent);
+      setEditingContent(initialContent);
+      setCurrentPhase('editing');  // Pular direto para edição
+    }
+  }, [initialContent]);
 
   // Helper to get auth headers
   const getAuthHeaders = () => {

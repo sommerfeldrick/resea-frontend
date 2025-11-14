@@ -129,11 +129,7 @@ const Sidebar: React.FC<{
             {/* Documents List - Scrollable area */}
             <div className="flex-1 overflow-hidden mb-4">
                 <DocumentsSidebar
-                    onSelectDocument={(documentId) => {
-                        console.log('Documento selecionado:', documentId);
-                        // TODO: Implementar abertura do documento no editor
-                        alert('Funcionalidade de edição em desenvolvimento.\nDocumento ID: ' + documentId);
-                    }}
+                    onSelectDocument={handleOpenDocument}
                 />
             </div>
 
@@ -286,6 +282,7 @@ const AppContent: React.FC = () => {
   const [history, setHistory] = useState<CompletedResearch[]>(mockHistory);
   const [currentResearch, setCurrentResearch] = useState<CompletedResearch | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<{id: number; title: string; content: string} | null>(null);
 
   // Handle token from redirect URL
   useEffect(() => {
@@ -339,6 +336,63 @@ const AppContent: React.FC = () => {
     setQuery('');
     setClarificationSession(null);
     setCurrentResearch(null);
+    setEditingDocument(null);
+  };
+
+  const handleOpenDocument = async (documentId: number) => {
+    try {
+      // Importar authService e API_BASE_URL
+      const { authService } = await import('./services/authService');
+      const { API_BASE_URL } = await import('./config');
+
+      const token = authService.getToken();
+      if (!token) {
+        alert('Você precisa estar logado para abrir documentos');
+        return;
+      }
+
+      // Buscar conteúdo do documento
+      const response = await fetch(`${API_BASE_URL}/api/documents/${documentId}/content`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar documento');
+      }
+
+      const data = await response.json();
+
+      // Buscar metadados do documento
+      const metaResponse = await fetch(`${API_BASE_URL}/api/documents/${documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!metaResponse.ok) {
+        throw new Error('Erro ao carregar metadados do documento');
+      }
+
+      const metaData = await metaResponse.json();
+
+      // Armazenar documento para edição
+      setEditingDocument({
+        id: documentId,
+        title: metaData.data.title,
+        content: data.content
+      });
+
+      // Navegar para wizard em modo de edição
+      setQuery(metaData.data.title);
+      setView('wizard');
+
+      console.log('✅ Documento carregado para edição:', metaData.data.title);
+    } catch (error: any) {
+      console.error('Erro ao abrir documento:', error);
+      alert('❌ Erro ao abrir documento:\n' + (error.message || 'Erro desconhecido'));
+    }
   };
   
   const handleSelectHistory = (id: string) => {
@@ -380,7 +434,11 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (view) {
       case 'wizard':
-        return <ResearchWizard initialQuery={query} initialClarificationSession={clarificationSession} />;
+        return <ResearchWizard
+          initialQuery={query}
+          initialClarificationSession={clarificationSession}
+          initialContent={editingDocument?.content}
+        />;
       case 'landing':
         return <LandingPage onPlanGenerated={handlePlanGenerated} onResearchStart={handleResearchStart} />;
       case 'content_generation':
