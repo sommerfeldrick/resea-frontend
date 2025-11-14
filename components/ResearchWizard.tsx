@@ -727,9 +727,11 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const handleSaveDraft = async () => {
     try {
       setIsExporting(true);
-      const user = authService.getUser();
 
-      if (!user) {
+      // Pega o token atualizado do localStorage
+      const token = authService.getToken();
+
+      if (!token) {
         alert('Você precisa estar logado para salvar o documento');
         return;
       }
@@ -745,7 +747,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.accessToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           title: query || 'Documento de Pesquisa',
@@ -775,9 +777,11 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const handleExportDocument = async () => {
     try {
       setIsExporting(true);
-      const user = authService.getUser();
 
-      if (!user) {
+      // Pega o token atualizado do localStorage
+      const token = authService.getToken();
+
+      if (!token) {
         alert('Você precisa estar logado para finalizar o documento');
         return;
       }
@@ -794,7 +798,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.accessToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           title: query || 'Documento de Pesquisa',
@@ -817,7 +821,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.accessToken}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           content: contentToSave,
