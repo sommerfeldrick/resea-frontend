@@ -215,9 +215,21 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
   useEffect(() => {
     loadDocuments();
 
-    // Atualizar a cada 2 minutos
-    const interval = setInterval(loadDocuments, 2 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Atualizar a cada 30 segundos para detectar novos documentos rapidamente
+    const interval = setInterval(loadDocuments, 30 * 1000);
+
+    // Escutar evento de documento salvo para atualizar imediatamente
+    const handleDocumentSaved = () => {
+      console.log('📄 Documento salvo - atualizando sidebar...');
+      loadDocuments();
+    };
+
+    window.addEventListener('documentSaved', handleDocumentSaved);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('documentSaved', handleDocumentSaved);
+    };
   }, []);
 
   const handleDelete = async (documentId: number) => {
@@ -297,9 +309,8 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
           color: 'rgba(255, 255, 255, 0.6)'
         }}
       >
-        <div style={{ fontSize: '48px', marginBottom: '12px' }}>📄</div>
-        <div style={{ fontSize: '14px' }}>Nenhum documento ainda</div>
-        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+        <div style={{ fontSize: '14px', fontWeight: '500' }}>Nenhum documento ainda</div>
+        <div style={{ fontSize: '12px', marginTop: '8px', color: 'rgba(255, 255, 255, 0.4)' }}>
           Gere seu primeiro documento!
         </div>
       </div>

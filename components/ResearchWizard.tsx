@@ -764,6 +764,10 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       }
 
       const data = await response.json();
+
+      // Dispara evento para atualizar sidebar imediatamente
+      window.dispatchEvent(new CustomEvent('documentSaved'));
+
       alert('✅ Rascunho salvo com sucesso!\n\nVocê pode acessar seus documentos salvos no histórico.');
 
     } catch (error) {
@@ -841,6 +845,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       }
 
       const finalizeData = await finalizeResponse.json();
+
+      // Dispara evento para atualizar sidebar imediatamente
+      window.dispatchEvent(new CustomEvent('documentSaved'));
 
       alert(
         `✅ Documento finalizado com sucesso!\n\n` +
