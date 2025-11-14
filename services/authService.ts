@@ -228,39 +228,60 @@ class AuthService {
         let usageData: any = null;
         let creditsSource = 'nenhum';
 
-        // Tentativa 1: /api/auth/usage-data (endpoint de uso)
+        // Tentativa 1: /api/user/credits (SISTEMA LOCAL RESEA - PRIORIDADE)
         try {
-          console.log('🔍 Tentativa 1: Buscando /api/auth/usage-data...');
-          const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
+          console.log('🔍 Tentativa 1: Buscando /api/user/credits (sistema local Resea)...');
+          const creditsResponse = await fetch(`${API_BASE_URL}/api/user/credits`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
-          
-          if (usageResponse.ok) {
-            const usageJson = await usageResponse.json();
-            usageData = usageJson.data || usageJson;
-            creditsSource = 'usage-data';
-            console.log('✅ Dados de usage-data obtidos:', usageData);
+
+          if (creditsResponse.ok) {
+            const creditsJson = await creditsResponse.json();
+            usageData = creditsJson.data || creditsJson;
+            creditsSource = 'resea-local';
+            console.log('✅ Dados de créditos locais obtidos:', usageData);
           } else {
-            console.warn('⚠️ /api/auth/usage-data retornou status:', usageResponse.status);
+            console.warn('⚠️ /api/user/credits retornou status:', creditsResponse.status);
           }
         } catch (error) {
-          console.warn('⚠️ Erro ao buscar /api/auth/usage-data:', error);
+          console.warn('⚠️ Erro ao buscar /api/user/credits:', error);
         }
 
-        // Se não conseguiu do usage-data, tenta /api/auth/profile
+        // Tentativa 2: /api/auth/usage-data (endpoint do SmileAI Platform)
         if (!usageData || usageData.words_left === undefined) {
           try {
-            console.log('🔍 Tentativa 2: Buscando /api/auth/profile...');
+            console.log('🔍 Tentativa 2: Buscando /api/auth/usage-data...');
+            const usageResponse = await fetch(`${API_BASE_URL}/api/auth/usage-data`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (usageResponse.ok) {
+              const usageJson = await usageResponse.json();
+              usageData = usageJson.data || usageJson;
+              creditsSource = 'usage-data-smileai';
+              console.log('✅ Dados de usage-data obtidos:', usageData);
+            } else {
+              console.warn('⚠️ /api/auth/usage-data retornou status:', usageResponse.status);
+            }
+          } catch (error) {
+            console.warn('⚠️ Erro ao buscar /api/auth/usage-data:', error);
+          }
+        }
+
+        // Tentativa 3: /api/auth/profile (SmileAI Platform)
+        if (!usageData || usageData.words_left === undefined) {
+          try {
+            console.log('🔍 Tentativa 3: Buscando /api/auth/profile...');
             const profileResponse = await fetch(`${API_BASE_URL}/api/auth/profile`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
-            
+
             if (profileResponse.ok) {
               const profileJson = await profileResponse.json();
               const profileData = profileJson.data || profileJson;
               if (profileData.words_left !== undefined) {
                 usageData = profileData;
-                creditsSource = 'profile';
+                creditsSource = 'profile-smileai';
                 console.log('✅ Dados de profile obtidos:', usageData);
               }
             } else {
@@ -271,9 +292,9 @@ class AuthService {
           }
         }
 
-        // Se ainda não tem usageData, tenta extrair de userData.entity_credits
+        // Tentativa 4: Extrair de userData.entity_credits
         if (!usageData) {
-          console.log('🔍 Tentativa 3: Extraindo de entity_credits...');
+          console.log('🔍 Tentativa 4: Extraindo de entity_credits...');
           if (userData.entity_credits && typeof userData.entity_credits === 'object') {
             creditsSource = 'entity_credits';
             usageData = {
@@ -293,17 +314,17 @@ class AuthService {
           }
         }
 
-        // Se ainda sem dados, tenta usar remaining_words do userData
+        // Tentativa 5: Usar remaining_words do userData
         if (!usageData && userData.remaining_words) {
-          console.log('🔍 Tentativa 4: Usando remaining_words...');
+          console.log('🔍 Tentativa 5: Usando remaining_words...');
           creditsSource = 'remaining_words';
           usageData = { words_left: Number(userData.remaining_words) };
           console.log('✅ Usando remaining_words:', usageData);
         }
 
-        // Última tentativa: valor padrão
+        // Tentativa 6 (último fallback): valor padrão
         if (!usageData) {
-          console.log('⚠️ Usando fallback padrão: 100 palavras');
+          console.log('⚠️ Usando fallback padrão: 100 documentos');
           creditsSource = 'fallback-padrão';
           usageData = { words_left: 100 };
         }
