@@ -328,53 +328,9 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
     return null; // Não mostrar nada enquanto carrega
   }
 
-  if (error) {
-    return (
-      <div
-        style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: '#ef4444'
-        }}
-      >
-        <div style={{ fontSize: '32px', marginBottom: '8px' }}>⚠️</div>
-        <div>{error}</div>
-        <button
-          onClick={loadDocuments}
-          style={{
-            marginTop: '12px',
-            padding: '8px 16px',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            borderRadius: '6px',
-            color: '#fff',
-            cursor: 'pointer'
-          }}
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
-
-  if (documents.length === 0) {
-    return (
-      <div
-        style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: 'rgba(255, 255, 255, 0.6)'
-        }}
-      >
-        <div style={{ fontSize: '14px', fontWeight: '500' }}>Nenhum documento ainda</div>
-        <div style={{ fontSize: '12px', marginTop: '8px', color: 'rgba(255, 255, 255, 0.4)' }}>
-          Gere seu primeiro documento!
-        </div>
-      </div>
-    );
-  }
-
-  const grouped: GroupedDocuments = groupDocumentsByDate(documents);
+  const grouped: GroupedDocuments = documents.length > 0
+    ? groupDocumentsByDate(documents)
+    : { today: [], yesterday: [], thisWeek: [], older: [] };
 
   return (
     <div
@@ -385,7 +341,7 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
         padding: '16px'
       }}
     >
-      {/* Divisor */}
+      {/* Divisor - sempre visível */}
       <div
         style={{
           height: '1px',
@@ -394,7 +350,7 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
         }}
       />
 
-      {/* Header */}
+      {/* Header - sempre visível */}
       <div
         style={{
           marginBottom: '16px'
@@ -412,35 +368,83 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
         </h3>
       </div>
 
-      {/* Document Groups */}
-      <DocumentGroup
-        title="Hoje"
-        documents={grouped.today}
-        onDelete={handleDelete}
-        onDownload={handleDownload}
-        onSelect={onSelectDocument}
-      />
-      <DocumentGroup
-        title="Ontem"
-        documents={grouped.yesterday}
-        onDelete={handleDelete}
-        onDownload={handleDownload}
-        onSelect={onSelectDocument}
-      />
-      <DocumentGroup
-        title="Esta Semana"
-        documents={grouped.thisWeek}
-        onDelete={handleDelete}
-        onDownload={handleDownload}
-        onSelect={onSelectDocument}
-      />
-      <DocumentGroup
-        title="Mais Antigos"
-        documents={grouped.older}
-        onDelete={handleDelete}
-        onDownload={handleDownload}
-        onSelect={onSelectDocument}
-      />
+      {/* Mensagem de erro */}
+      {error && (
+        <div
+          style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: '#ef4444'
+          }}
+        >
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>⚠️</div>
+          <div>{error}</div>
+          <button
+            onClick={loadDocuments}
+            style={{
+              marginTop: '12px',
+              padding: '8px 16px',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '6px',
+              color: '#fff',
+              cursor: 'pointer'
+            }}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
+      {/* Mensagem quando não há documentos */}
+      {!error && documents.length === 0 && (
+        <div
+          style={{
+            padding: '20px',
+            textAlign: 'center',
+            color: 'rgba(255, 255, 255, 0.6)'
+          }}
+        >
+          <div style={{ fontSize: '14px', fontWeight: '500' }}>Nenhum documento ainda</div>
+          <div style={{ fontSize: '12px', marginTop: '8px', color: 'rgba(255, 255, 255, 0.4)' }}>
+            Gere seu primeiro documento!
+          </div>
+        </div>
+      )}
+
+      {/* Document Groups - só renderiza se não houver erro */}
+      {!error && (
+        <>
+          <DocumentGroup
+            title="Hoje"
+            documents={grouped.today}
+            onDelete={handleDelete}
+            onDownload={handleDownload}
+            onSelect={onSelectDocument}
+          />
+          <DocumentGroup
+            title="Ontem"
+            documents={grouped.yesterday}
+            onDelete={handleDelete}
+            onDownload={handleDownload}
+            onSelect={onSelectDocument}
+          />
+          <DocumentGroup
+            title="Esta Semana"
+            documents={grouped.thisWeek}
+            onDelete={handleDelete}
+            onDownload={handleDownload}
+            onSelect={onSelectDocument}
+          />
+          <DocumentGroup
+            title="Mais Antigos"
+            documents={grouped.older}
+            onDelete={handleDelete}
+            onDownload={handleDownload}
+            onSelect={onSelectDocument}
+          />
+        </>
+      )}
 
       <style>{`
         .documents-sidebar {
