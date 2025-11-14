@@ -368,10 +368,25 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       }
 
       const data = await response.json();
+      console.log('✅ Clarification session received:', data);
+
+      // Validar estrutura da resposta
+      if (!data || !data.data || !data.data.questions || !Array.isArray(data.data.questions)) {
+        console.error('❌ Invalid response structure:', data);
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      if (data.data.questions.length === 0) {
+        throw new Error('Nenhuma pergunta foi gerada');
+      }
+
+      console.log('📊 Questions count:', data.data.questions.length);
+      console.log('📝 First question:', data.data.questions[0]);
+
       setClarificationSession(data.data);
       setCurrentPhase('clarification');
     } catch (err: any) {
-      console.error('Erro ao iniciar pesquisa:', err);
+      console.error('❌ Erro ao iniciar pesquisa:', err);
       setError(err.message || 'Erro ao iniciar pesquisa. Verifique sua conexão e tente novamente.');
     } finally {
       setIsLoading(false);
@@ -1025,11 +1040,50 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   );
 
   const renderPhase2Clarification = () => {
-    if (!clarificationSession || !clarificationSession.questions[currentQuestionIndex]) {
-      return <div>Carregando...</div>;
+    if (!clarificationSession || !clarificationSession.questions || clarificationSession.questions.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Carregando perguntas...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!clarificationSession.questions[currentQuestionIndex]) {
+      return (
+        <div className="max-w-2xl mx-auto p-8">
+          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl shadow-lg p-6">
+            <p className="text-red-600 dark:text-red-400">
+              Erro: Pergunta não encontrada (índice: {currentQuestionIndex})
+            </p>
+            <button
+              onClick={() => setCurrentQuestionIndex(0)}
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              Voltar ao início
+            </button>
+          </div>
+        </div>
+      );
     }
 
     const question = clarificationSession.questions[currentQuestionIndex];
+
+    // Validação adicional da estrutura da pergunta
+    if (!question || typeof question !== 'object') {
+      console.error('Invalid question object:', question);
+      return (
+        <div className="max-w-2xl mx-auto p-8">
+          <div className="bg-red-50 dark:bg-red-900/20 rounded-xl shadow-lg p-6">
+            <p className="text-red-600 dark:text-red-400">
+              Erro: Estrutura de pergunta inválida
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     const progress = ((currentQuestionIndex + 1) / clarificationSession.questions.length) * 100;
 
     return (
