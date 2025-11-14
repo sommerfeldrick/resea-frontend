@@ -1025,8 +1025,41 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   );
 
   const renderPhase2Clarification = () => {
-    if (!clarificationSession || !clarificationSession.questions[currentQuestionIndex]) {
-      return <div>Carregando...</div>;
+    if (!clarificationSession || !clarificationSession.questions || clarificationSession.questions.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center">
+            {isLoading ? (
+              <>
+                <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">Gerando perguntas de clarificação...</p>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Não foi possível carregar as perguntas de clarificação.
+                </p>
+                <button
+                  onClick={() => setCurrentPhase('onboarding')}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  Voltar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (!clarificationSession.questions[currentQuestionIndex]) {
+      return (
+        <div className="max-w-2xl mx-auto p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">Pergunta não encontrada.</p>
+          </div>
+        </div>
+      );
     }
 
     const question = clarificationSession.questions[currentQuestionIndex];
@@ -2669,7 +2702,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       )}
 
       {/* Phase Content */}
-      {/* Phase 1 (Onboarding) is now handled by LandingPage */}
+      {currentPhase === 'onboarding' && renderPhase1Onboarding()}
       {currentPhase === 'clarification' && renderPhase2Clarification()}
       {currentPhase === 'strategy' && renderPhase3Strategy()}
       {currentPhase === 'search' && renderPhase4Search()}
