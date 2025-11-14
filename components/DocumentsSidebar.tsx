@@ -93,7 +93,7 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -101,18 +101,22 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
             }}
             disabled={isDownloading}
             style={{
-              padding: '6px',
-              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-              border: 'none',
-              borderRadius: '6px',
+              padding: '6px 10px',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '4px',
               cursor: isDownloading ? 'wait' : 'pointer',
-              fontSize: '16px',
+              fontSize: '11px',
+              fontWeight: '500',
+              color: '#60a5fa',
               transition: 'all 0.2s ease',
-              opacity: isDownloading ? 0.5 : 1
+              opacity: isDownloading ? 0.5 : 1,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}
             title="Baixar documento"
           >
-            {isDownloading ? '⏳' : '⬇️'}
+            {isDownloading ? 'Baixando...' : 'Baixar'}
           </button>
           <button
             onClick={(e) => {
@@ -121,18 +125,22 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
             }}
             disabled={isDeleting}
             style={{
-              padding: '6px',
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: 'none',
-              borderRadius: '6px',
+              padding: '6px 10px',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '4px',
               cursor: isDeleting ? 'wait' : 'pointer',
-              fontSize: '16px',
+              fontSize: '11px',
+              fontWeight: '500',
+              color: '#f87171',
               transition: 'all 0.2s ease',
-              opacity: isDeleting ? 0.5 : 1
+              opacity: isDeleting ? 0.5 : 1,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}
             title="Deletar documento"
           >
-            {isDeleting ? '⏳' : '🗑️'}
+            {isDeleting ? 'Deletando...' : 'Deletar'}
           </button>
         </div>
       </div>
@@ -144,7 +152,12 @@ function DocumentItem({ document, onDelete, onDownload, onSelect }: DocumentItem
         }
 
         .document-item button:hover:not(:disabled) {
-          transform: scale(1.1);
+          opacity: 1;
+          background-color: rgba(59, 130, 246, 0.25);
+        }
+
+        .document-item button:last-child:hover:not(:disabled) {
+          background-color: rgba(239, 68, 68, 0.25);
         }
       `}</style>
     </div>
@@ -350,16 +363,23 @@ export function DocumentsSidebar({ onSelectDocument }: DocumentsSidebarProps) {
         <button
           onClick={loadDocuments}
           style={{
-            padding: '4px 8px',
+            padding: '6px 12px',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: 'none',
-            borderRadius: '6px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '16px'
+            fontSize: '11px',
+            fontWeight: '500',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            transition: 'all 0.2s ease'
           }}
           title="Atualizar lista"
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
         >
-          🔄
+          Atualizar
         </button>
       </div>
 

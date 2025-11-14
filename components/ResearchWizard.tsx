@@ -743,6 +743,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         return;
       }
 
+      // Gera título a partir do tópico refinado ou da query original
+      const documentTitle = searchStrategy?.topic || query || 'Documento de Pesquisa';
+
       const response = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
         headers: {
@@ -750,7 +753,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          title: query || 'Documento de Pesquisa',
+          title: documentTitle,
           content: contentToSave,
           document_type: 'research',
           research_query: query,
@@ -797,6 +800,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         return;
       }
 
+      // Gera título a partir do tópico refinado ou da query original
+      const documentTitle = searchStrategy?.topic || query || 'Documento de Pesquisa';
+
       // Passo 1: Salvar o documento
       const saveResponse = await fetch(`${API_BASE_URL}/api/documents`, {
         method: 'POST',
@@ -805,7 +811,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          title: query || 'Documento de Pesquisa',
+          title: documentTitle,
           content: contentToSave,
           document_type: 'research',
           research_query: query,
@@ -829,7 +835,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
         },
         body: JSON.stringify({
           content: contentToSave,
-          title: query || 'Documento de Pesquisa',
+          title: documentTitle,
           documentId: savedDoc.data.id,
           documentType: 'research',
           metadata: {
