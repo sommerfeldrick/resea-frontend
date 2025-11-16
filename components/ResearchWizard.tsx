@@ -282,7 +282,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
   const autoSave = useAutoSave(editingContent || generatedContent, {
     interval: 30000, // 30 segundos
-    enabled: currentPhase === 'editing' || currentPhase === 'generation',
+    enabled: false, // TEMPORARIAMENTE DESABILITADO PARA DEBUG - testar se erro #310 persiste
     onSave: handleAutoSave,
     onSuccess: () => {
       // Não mostrar toast para não incomodar o usuário
