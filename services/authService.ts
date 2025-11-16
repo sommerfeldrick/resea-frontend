@@ -49,10 +49,8 @@ export interface AuthResponse {
 
 // Cache configuration
 const CACHE_TTL = 30 * 1000; // 30 seconds
-// Cache global compartilhado entre todas as instâncias (usando globalThis para compatibilidade browser)
-if (typeof globalThis !== 'undefined' && !(globalThis as any).authServiceCache) {
-  (globalThis as any).authServiceCache = new Map<string, {data: any, timestamp: number}>();
-}
+// Cache em nível de módulo (compartilhado entre todas as instâncias do AuthService)
+const moduleCache = new Map<string, {data: any, timestamp: number}>();
 
 // Plan configuration
 const PLAN_DETAILS: Record<string, { name: string; maxSearches: number; maxWords: number }> = {
@@ -166,13 +164,7 @@ class AuthService {
    * Cache wrapper
    */
   private async withCache<T>(key: string, fetchFn: () => Promise<T>): Promise<T> {
-    const cache = (globalThis as any).authServiceCache;
-    if (!cache) {
-      // Se o cache não existe, apenas buscar os dados sem cachear
-      return await fetchFn();
-    }
-
-    const cached = cache.get(key);
+    const cached = moduleCache.get(key);
     const now = Date.now();
 
     // Se há dados em cache e eles são válidos
@@ -188,7 +180,7 @@ class AuthService {
     // Armazenar no cache apenas se não for null
     if (data !== null) {
       console.log('Armazenando em cache:', key, data);
-      cache.set(key, { data, timestamp: now });
+      moduleCache.set(key, { data, timestamp: now });
     }
 
     return data;
@@ -450,13 +442,10 @@ class AuthService {
    * Clear cache for a specific key or all cache if no key is provided
    */
   private clearCache(key?: string): void {
-    const cache = (globalThis as any).authServiceCache;
-    if (!cache) return; // Se o cache não existe, não há nada para limpar
-
     if (key) {
-      cache.delete(key);
+      moduleCache.delete(key);
     } else {
-      cache.clear();
+      moduleCache.clear();
     }
   }
 
