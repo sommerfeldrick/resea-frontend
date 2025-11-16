@@ -120,5 +120,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
         </div>
       </button>
     </div>
+    </>
   );
 };
