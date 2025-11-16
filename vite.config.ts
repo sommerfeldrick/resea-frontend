@@ -20,7 +20,6 @@ export default defineConfig(({ mode }) => {
       define: {
         // Remove API key exposure - now handled by backend
         'import.meta.env.VITE_API_URL': JSON.stringify(env.VITE_API_URL || 'http://localhost:3001/api'),
-        'global': 'globalThis',
       },
       resolve: {
         alias: {
