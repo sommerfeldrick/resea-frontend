@@ -253,6 +253,22 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   // Toast notifications
   const { toasts, showToast, dismissToast, success, error: showError, info } = useToast();
 
+  // Phase 7: Editing
+  const [editingContent, setEditingContent] = useState('');
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string } | null>(null);
+  const [showEditMenu, setShowEditMenu] = useState(false);
+  const [editMenuPosition, setEditMenuPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Phase 8: Export
+  const [exportFormat, setExportFormat] = useState<'docx' | 'pdf' | 'latex' | 'markdown' | 'html'>('docx');
+  const [citationStyle, setCitationStyle] = useState<'abnt' | 'apa' | 'vancouver' | 'chicago'>('abnt');
+  const [qualityVerification, setQualityVerification] = useState<QualityVerification | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Refs
+  const contentEditorRef = useRef<HTMLTextAreaElement>(null);
+
   // Auto-save
   const handleAutoSave = async (content: string) => {
     // Salva o conteúdo em localStorage como draft
@@ -276,22 +292,6 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       console.error('Auto-save failed:', error);
     }
   });
-
-  // Phase 7: Editing
-  const [editingContent, setEditingContent] = useState('');
-  const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string } | null>(null);
-  const [showEditMenu, setShowEditMenu] = useState(false);
-  const [editMenuPosition, setEditMenuPosition] = useState<{ x: number; y: number } | null>(null);
-
-  // Phase 8: Export
-  const [exportFormat, setExportFormat] = useState<'docx' | 'pdf' | 'latex' | 'markdown' | 'html'>('docx');
-  const [citationStyle, setCitationStyle] = useState<'abnt' | 'apa' | 'vancouver' | 'chicago'>('abnt');
-  const [qualityVerification, setQualityVerification] = useState<QualityVerification | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Refs
-  const contentEditorRef = useRef<HTMLTextAreaElement>(null);
 
   // Carregar conteúdo inicial se fornecido (para edição de documento existente)
   useEffect(() => {
