@@ -228,6 +228,8 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   // Phase 5: Analysis
   const [knowledgeGraph, setKnowledgeGraph] = useState<KnowledgeGraph | null>(null);
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [expandedNode, setExpandedNode] = useState<string | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
   // Phase 6: Generation
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
@@ -1677,9 +1679,6 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   };
 
   const renderPhase5Analysis = () => {
-    const [expandedNode, setExpandedNode] = useState<string | null>(null);
-    const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-
     if (!knowledgeGraph) {
       return (
         <div className="max-w-4xl mx-auto p-8">
