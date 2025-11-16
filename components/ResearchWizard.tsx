@@ -282,7 +282,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
   const autoSave = useAutoSave(editingContent || generatedContent, {
     interval: 30000, // 30 segundos
-    enabled: false, // TEMPORARIAMENTE DESABILITADO PARA DEBUG - testar se erro #310 persiste
+    enabled: currentPhase === 'editing' || currentPhase === 'generation',
     onSave: handleAutoSave,
     onSuccess: () => {
       // Não mostrar toast para não incomodar o usuário
@@ -512,6 +512,12 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       let accumulatedArticles: EnrichedArticle[] = [];
       let buffer = ''; // Buffer para linhas incompletas
 
+      // Throttle para evitar updates muito rápidos (React error #310)
+      let lastProgressUpdate = 0;
+      let lastArticlesUpdate = 0;
+      let pendingProgress: SearchProgress | null = null;
+      const UPDATE_INTERVAL = 500; // Atualizar UI no máximo a cada 500ms
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -534,12 +540,25 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               const data = JSON.parse(jsonStr);
 
               if (data.type === 'progress') {
-                setSearchProgress(data.data);
+                pendingProgress = data.data;
+                const now = Date.now();
+                if (now - lastProgressUpdate > UPDATE_INTERVAL) {
+                  setSearchProgress(pendingProgress);
+                  lastProgressUpdate = now;
+                  pendingProgress = null;
+                }
               } else if (data.type === 'articles_batch') {
                 // Acumular artigos dos lotes
                 accumulatedArticles = [...accumulatedArticles, ...data.data];
-                setArticles(accumulatedArticles);
+                const now = Date.now();
+                if (now - lastArticlesUpdate > UPDATE_INTERVAL) {
+                  setArticles(accumulatedArticles);
+                  lastArticlesUpdate = now;
+                }
               } else if (data.type === 'complete') {
+                // Update final - garantir que tudo foi atualizado
+                if (pendingProgress) setSearchProgress(pendingProgress);
+                setArticles(accumulatedArticles);
                 setIsLoading(false);
                 // Iniciar FASE 5 automaticamente com todos os artigos acumulados
                 setTimeout(() => handleStartAnalysis(accumulatedArticles), 1000);
