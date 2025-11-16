@@ -37,6 +37,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onRes
     setIsLoading(true);
     setError(null);
     try {
+      // Preparar contexto adicional dos arquivos anexados
+      const additionalContext = attachedFiles
+        .filter(file => file.extractedText)
+        .map(file => `\n\n---\nContexto de ${file.originalName}:\n${file.extractedText}`)
+        .join('\n');
+
+      // Criar query completa com contexto
+      const fullQuery = additionalContext ? `${query}${additionalContext}` : query;
+
       // If onResearchStart is provided, use new 8-phase wizard flow
       if (onResearchStart) {
         // Call clarification API to start Phase 2 directly
@@ -47,17 +56,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onRes
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({
+            query: fullQuery,
+            attachedFiles: attachedFiles.map(f => ({ id: f.id, filename: f.originalName }))
+          })
         });
 
         if (!response.ok) throw new Error('Falha ao iniciar pesquisa');
 
         const data = await response.json();
-        onResearchStart(query, data.data);
+        onResearchStart(fullQuery, data.data);
       } else {
         // Fallback to old flow
-        const plan = await generateTaskPlan(query);
-        onPlanGenerated(plan, query);
+        const plan = await generateTaskPlan(fullQuery);
+        onPlanGenerated(plan, fullQuery);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao gerar o plano de pesquisa. Por favor, tente novamente.');
@@ -160,6 +172,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onPlanGenerated, onRes
               onTemplateSelect={(prompt) => {
                 setQuery(prompt);
               }}
+              onResearchStart={onResearchStart ? async (query: string) => {
+                setIsLoading(true);
+                setError(null);
+                try {
+                  // Preparar contexto adicional dos arquivos anexados
+                  const additionalContext = attachedFiles
+                    .filter(file => file.extractedText)
+                    .map(file => `\n\n---\nContexto de ${file.originalName}:\n${file.extractedText}`)
+                    .join('\n');
+
+                  // Criar query completa com contexto
+                  const fullQuery = additionalContext ? `${query}${additionalContext}` : query;
+
+                  // Call clarification API to start Phase 2 directly
+                  const token = authService.getToken();
+                  const response = await fetch(`${API_BASE_URL}/api/research-flow/clarification/generate`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({
+                      query: fullQuery,
+                      attachedFiles: attachedFiles.map(f => ({ id: f.id, filename: f.originalName }))
+                    })
+                  });
+
+                  if (!response.ok) throw new Error('Falha ao iniciar pesquisa');
+
+                  const data = await response.json();
+                  onResearchStart(fullQuery, data.data);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Falha ao iniciar pesquisa. Por favor, tente novamente.');
+                  console.error(err);
+                } finally {
+                  setIsLoading(false);
+                }
+              } : undefined}
             />
           </div>
         </div>

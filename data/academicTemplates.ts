@@ -41,6 +41,9 @@ export interface AcademicTemplate {
 
   // Template do prompt que será enviado
   promptTemplate: string;
+
+  // Exemplo real de saída gerada (não o prompt)
+  example?: string;
 }
 
 export const academicTemplates: AcademicTemplate[] = [
@@ -59,6 +62,15 @@ export const academicTemplates: AcademicTemplate[] = [
       { name: 'area', label: 'Área do Conhecimento', type: 'select', options: ['Ciências Humanas', 'Ciências Exatas', 'Ciências Biológicas', 'Ciências da Saúde', 'Engenharias', 'Ciências Sociais Aplicadas'], required: true },
       { name: 'keywords', label: 'Palavras-chave', type: 'tags', placeholder: 'Adicione palavras-chave...', required: true }
     ],
+    example: `## Introdução
+
+A inteligência artificial (IA) tem transformado diversos setores da sociedade contemporânea, emergindo como uma das tecnologias mais disruptivas do século XXI. No contexto educacional, observa-se um crescente interesse na aplicação de sistemas inteligentes para personalização do ensino, automação de processos avaliativos e suporte à tomada de decisão pedagógica (Luckin et al., 2016; Holstein et al., 2019).
+
+O panorama atual da educação brasileira revela desafios significativos relacionados à qualidade do ensino, evasão escolar e dificuldades de aprendizagem em larga escala. Segundo dados do INEP (2023), aproximadamente 30% dos estudantes do ensino médio apresentam defasagem em competências básicas de matemática e leitura. Neste cenário, a IA surge como uma alternativa promissora para endereçar essas lacunas através de sistemas adaptativos que respondem às necessidades individuais de cada estudante.
+
+Historicamente, a aplicação de tecnologias computacionais na educação remonta à década de 1960, com os primeiros sistemas de instrução assistida por computador. No entanto, foi apenas nas últimas duas décadas, com o avanço do aprendizado de máquina e mineração de dados educacionais, que se tornou possível desenvolver ambientes verdadeiramente adaptativos e inteligentes (Baker & Inventado, 2014; Siemens & Baker, 2012).
+
+Atualmente, a pesquisa em IA aplicada à educação concentra-se em quatro áreas principais: sistemas de tutoria inteligente, análise preditiva de desempenho, personalização de trilhas de aprendizagem e feedback automático (VanLehn, 2011; Papamitsiou & Economides, 2014). Estudos recentes demonstram ganhos significativos no engajamento estudantil e nos resultados de aprendizagem quando sistemas de IA são adequadamente implementados (Kulik & Fletcher, 2016).`,
     promptTemplate: `Crie uma introdução acadêmica contextualizando o tema "{tema}" na área de {area}.
 
 Estrutura desejada:
@@ -125,6 +137,33 @@ Requisitos:
       { name: 'objetivo_geral', label: 'Objetivo Geral (opcional)', type: 'textarea', placeholder: 'Qual o objetivo principal?', required: false },
       { name: 'tipo_pesquisa', label: 'Tipo de Pesquisa', type: 'select', options: ['Exploratória', 'Descritiva', 'Explicativa', 'Aplicada', 'Básica'], required: true }
     ],
+    example: `## Objetivos e Perguntas de Pesquisa
+
+**Objetivo Geral:**
+
+Avaliar a eficácia de sistemas de inteligência artificial adaptativos na personalização de trilhas de aprendizagem para estudantes de cursos superiores de tecnologia.
+
+**Objetivos Específicos:**
+
+1. Identificar os principais algoritmos de aprendizado de máquina utilizados em sistemas de recomendação educacional e suas características distintivas.
+
+2. Desenvolver um protótipo funcional de sistema de personalização baseado em IA que se adapte ao perfil de aprendizagem dos estudantes.
+
+3. Avaliar o impacto do sistema desenvolvido no engajamento estudantil através de métricas quantitativas de tempo de uso e completude de atividades.
+
+4. Mensurar a melhoria no desempenho acadêmico dos estudantes que utilizaram o sistema adaptativo em comparação com grupo controle.
+
+5. Identificar os fatores que influenciam a aceitação e uso contínuo de sistemas adaptativos por estudantes e professores.
+
+**Perguntas de Pesquisa:**
+
+**Q1:** Quais algoritmos de IA demonstram maior eficácia na personalização de trilhas de aprendizagem em contextos educacionais?
+
+**Q2:** De que forma sistemas adaptativos baseados em IA impactam o engajamento e o desempenho acadêmico de estudantes do ensino superior?
+
+**Q3:** Quais barreiras e facilitadores influenciam a adoção de sistemas de IA adaptativos por estudantes e docentes?
+
+**Q4:** Como diferentes perfis de aprendizagem respondem à personalização oferecida por sistemas inteligentes?`,
     promptTemplate: `Elabore objetivos de pesquisa (geral e específicos) e perguntas de pesquisa para o tema "{tema}".
 
 Tipo de pesquisa: {tipo_pesquisa}
@@ -555,6 +594,25 @@ Requisitos:
       { name: 'objetivos_alcancados', label: 'Objetivos foram alcançados?', type: 'select', options: ['Sim, todos', 'Parcialmente', 'Alguns objetivos'], required: true },
       { name: 'contribuicao', label: 'Principal Contribuição', type: 'textarea', placeholder: 'Qual a principal contribuição deste estudo?', required: true }
     ],
+    example: `## Conclusão e Considerações Finais
+
+Este estudo investigou a aplicação de sistemas de inteligência artificial adaptativos na personalização de trilhas de aprendizagem para estudantes do ensino superior tecnológico, buscando avaliar sua eficácia no engajamento e desempenho acadêmico. Os objetivos estabelecidos foram plenamente alcançados através de uma abordagem metodológica mista que combinou desenvolvimento experimental e avaliação empírica.
+
+Os principais achados revelam que o sistema adaptativo desenvolvido resultou em aumento de 34% no tempo de engajamento (p<0.01) e melhoria de 23% nas taxas de conclusão de atividades quando comparado ao grupo controle. Adicionalmente, identificou-se que algoritmos baseados em filtragem colaborativa e redes neurais demonstraram maior precisão na recomendação de conteúdos personalizados, respondendo adequadamente às perguntas de pesquisa Q1 e Q2.
+
+**Contribuições do estudo:**
+
+**Teóricas:** Este trabalho contribui para o corpo de conhecimento em Educational Data Mining ao propor um framework conceitual que integra teorias de estilos de aprendizagem com algoritmos de aprendizado de máquina, oferecendo base teórica para pesquisas futuras na área.
+
+**Metodológicas:** A metodologia de avaliação desenvolvida, que combina métricas objetivas de engajamento com análises qualitativas da experiência do usuário, pode ser replicada em contextos similares de pesquisa em tecnologia educacional.
+
+**Práticas:** O protótipo desenvolvido demonstra viabilidade técnica e pedagógica para implementação em larga escala em instituições de ensino superior, com potencial de redução de evasão e melhoria nos índices de aprendizagem.
+
+É importante reconhecer as limitações deste estudo, particularmente quanto ao tamanho amostral (n=120) e ao contexto específico de cursos de tecnologia, o que limita a generalização dos resultados para outras áreas do conhecimento. Adicionalmente, o período de observação de um semestre letivo pode não capturar efeitos de longo prazo do uso de sistemas adaptativos.
+
+Para pesquisas futuras, recomenda-se: (1) estudos longitudinais que avaliem o impacto da personalização adaptativa ao longo de múltiplos períodos letivos; (2) investigação de como diferentes perfis cognitivos e estilos de aprendizagem respondem a estratégias adaptativas específicas; (3) análise da transferência de aprendizagem entre contextos personalizados e não-personalizados; e (4) exploração de questões éticas relacionadas à privacidade de dados e viés algorítmico em sistemas educacionais.
+
+Em síntese, esta pesquisa demonstra que sistemas de IA adaptativos, quando fundamentados teoricamente e implementados adequadamente, constituem ferramentas promissoras para endereçar desafios contemporâneos da educação superior, contribuindo para uma aprendizagem mais personalizada, eficaz e engajadora.`,
     promptTemplate: `Elabore a conclusão para pesquisa sobre "{tema}".
 
 Objetivos alcançados: {objetivos_alcancados}

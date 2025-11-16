@@ -29,9 +29,33 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [tags, setTags] = useState<Record<string, string[]>>({});
   const [currentTag, setCurrentTag] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validar campos obrigatórios
+    const errors: Record<string, string> = {};
+    template.requiredFields.forEach(field => {
+      if (field.required) {
+        if (field.type === 'tags') {
+          if (!tags[field.name] || tags[field.name].length === 0) {
+            errors[field.name] = 'Este campo é obrigatório';
+          }
+        } else {
+          if (!formData[field.name] || formData[field.name].trim() === '') {
+            errors[field.name] = 'Este campo é obrigatório';
+          }
+        }
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
 
     // Preparar dados preenchidos combinando formData e tags
     const allFilledData: Record<string, any> = { ...formData };
@@ -109,39 +133,72 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
                 </label>
 
                 {field.type === 'text' && (
-                  <input
-                    type="text"
-                    required={field.required}
-                    placeholder={field.placeholder}
-                    value={formData[field.name] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
+                  <>
+                    <input
+                      type="text"
+                      placeholder={field.placeholder}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => {
+                        setFormData({ ...formData, [field.name]: e.target.value });
+                        if (validationErrors[field.name]) {
+                          setValidationErrors({ ...validationErrors, [field.name]: '' });
+                        }
+                      }}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                        validationErrors[field.name] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors[field.name] && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors[field.name]}</p>
+                    )}
+                  </>
                 )}
 
                 {field.type === 'textarea' && (
-                  <textarea
-                    required={field.required}
-                    placeholder={field.placeholder}
-                    value={formData[field.name] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                  />
+                  <>
+                    <textarea
+                      placeholder={field.placeholder}
+                      value={formData[field.name] || ''}
+                      onChange={(e) => {
+                        setFormData({ ...formData, [field.name]: e.target.value });
+                        if (validationErrors[field.name]) {
+                          setValidationErrors({ ...validationErrors, [field.name]: '' });
+                        }
+                      }}
+                      rows={3}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none ${
+                        validationErrors[field.name] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors[field.name] && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors[field.name]}</p>
+                    )}
+                  </>
                 )}
 
                 {field.type === 'select' && (
-                  <select
-                    required={field.required}
-                    value={formData[field.name] || ''}
-                    onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Selecione...</option>
-                    {field.options?.map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={formData[field.name] || ''}
+                      onChange={(e) => {
+                        setFormData({ ...formData, [field.name]: e.target.value });
+                        if (validationErrors[field.name]) {
+                          setValidationErrors({ ...validationErrors, [field.name]: '' });
+                        }
+                      }}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                        validationErrors[field.name] ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Selecione...</option>
+                      {field.options?.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    {validationErrors[field.name] && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors[field.name]}</p>
+                    )}
+                  </>
                 )}
 
                 {field.type === 'tags' && (
@@ -158,18 +215,25 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
                             handleAddTag(field.name);
                           }
                         }}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                          validationErrors[field.name] ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       />
                       <button
                         type="button"
-                        onClick={() => handleAddTag(field.name)}
+                        onClick={() => {
+                          handleAddTag(field.name);
+                          if (validationErrors[field.name]) {
+                            setValidationErrors({ ...validationErrors, [field.name]: '' });
+                          }
+                        }}
                         className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
                       >
                         Adicionar
                       </button>
                     </div>
                     {tags[field.name]?.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mb-2">
                         {tags[field.name].map((tag, index) => (
                           <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
                             {tag}
@@ -185,6 +249,9 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
                           </span>
                         ))}
                       </div>
+                    )}
+                    {validationErrors[field.name] && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors[field.name]}</p>
                     )}
                   </div>
                 )}
@@ -215,9 +282,10 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
 
 interface AcademicTemplatesGalleryProps {
   onTemplateSelect: (prompt: string) => void;
+  onResearchStart?: (query: string) => void;
 }
 
-export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> = ({ onTemplateSelect }) => {
+export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> = ({ onTemplateSelect, onResearchStart }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('introducao');
   const [selectedTemplate, setSelectedTemplate] = useState<AcademicTemplate | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,8 +389,15 @@ export const AcademicTemplatesGallery: React.FC<AcademicTemplatesGalleryProps> =
           onSubmit={(prompt, filledData) => {
             // Salvar no histórico
             addToHistory(selectedTemplate.id, filledData, prompt);
-            // Enviar prompt
-            onTemplateSelect(prompt);
+
+            // Se onResearchStart estiver disponível, iniciar wizard automaticamente
+            if (onResearchStart) {
+              onResearchStart(prompt);
+            } else {
+              // Caso contrário, apenas inserir no campo (comportamento antigo)
+              onTemplateSelect(prompt);
+            }
+
             setSelectedTemplate(null);
           }}
         />

@@ -170,32 +170,59 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           {/* Body */}
           <div className="p-6 overflow-y-auto max-h-[60vh]">
             <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Campos Necessários:</h4>
-                <div className="space-y-2">
-                  {template.requiredFields.map((field, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <span className="text-indigo-600 mt-1">•</span>
-                      <div>
-                        <span className="font-medium text-gray-700">{field.label}</span>
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
-                        {field.placeholder && (
-                          <p className="text-sm text-gray-500 mt-0.5">{field.placeholder}</p>
-                        )}
-                      </div>
+              {template.example ? (
+                /* Se houver exemplo, mostrar ele */
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Exemplo de Saída Gerada:
+                  </h4>
+                  <div className="bg-gradient-to-br from-gray-50 to-indigo-50/30 rounded-lg p-5 border border-indigo-100">
+                    <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                      {template.example.split('\n').map((line, i) => (
+                        <p key={i} className={line.startsWith('#') ? 'font-bold text-gray-900 text-base mt-3 mb-2' : line.startsWith('**') ? 'font-semibold text-gray-800' : ''}>
+                          {line}
+                        </p>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3 italic">
+                    Este é um exemplo real de saída que pode ser gerada. O resultado final será personalizado com base nos dados que você fornecer.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                /* Se não houver exemplo, mostrar campos e template como antes */
+                <>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Campos Necessários:</h4>
+                    <div className="space-y-2">
+                      {template.requiredFields.map((field, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="text-indigo-600 mt-1">•</span>
+                          <div>
+                            <span className="font-medium text-gray-700">{field.label}</span>
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.placeholder && (
+                              <p className="text-sm text-gray-500 mt-0.5">{field.placeholder}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Template do Prompt:</h4>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
-                    {template.promptTemplate}
-                  </pre>
-                </div>
-              </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Informações do Template:</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm text-gray-700">
+                        Este template ajuda você a criar {template.description.toLowerCase()}. Preencha os campos solicitados e deixe a IA fazer o trabalho pesado.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center gap-4 pt-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
