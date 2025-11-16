@@ -11,7 +11,7 @@
  * FASE 8: Export & Citation
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 import { authService } from '../services/authService';
 import { DOCUMENT_TEMPLATES, DocumentTemplate, estimateGenerationTime, calculateWordCount } from '../utils/documentTemplates';
@@ -270,7 +270,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const contentEditorRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-save
-  const handleAutoSave = async (content: string) => {
+  const handleAutoSave = useCallback(async (content: string) => {
     // Salva o conteúdo em localStorage como draft
     const draftKey = `resea_draft_${query || 'untitled'}`;
     localStorage.setItem(draftKey, JSON.stringify({
@@ -278,7 +278,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       timestamp: new Date().toISOString(),
       phase: currentPhase
     }));
-  };
+  }, [query, currentPhase]);
 
   const autoSave = useAutoSave(editingContent || generatedContent, {
     interval: 30000, // 30 segundos
