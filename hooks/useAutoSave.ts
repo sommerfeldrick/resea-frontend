@@ -31,6 +31,18 @@ export const useAutoSave = (
   const previousContentRef = useRef<string>(content);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Usar refs para callbacks para evitar re-renders infinitos
+  const onSaveRef = useRef(onSave);
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+
+  // Atualizar refs quando callbacks mudarem
+  useEffect(() => {
+    onSaveRef.current = onSave;
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  }, [onSave, onSuccess, onError]);
+
   // Detectar mudanças no conteúdo
   useEffect(() => {
     if (content !== previousContentRef.current) {
@@ -44,17 +56,15 @@ export const useAutoSave = (
     if (!enabled || !hasUnsavedChanges) return;
 
     const save = async () => {
-      if (isSaving) return; // Evita saves simultâneos
-
       setIsSaving(true);
       try {
-        await onSave(content);
+        await onSaveRef.current(content);
         setLastSaved(new Date());
         setHasUnsavedChanges(false);
-        onSuccess?.();
+        onSuccessRef.current?.();
       } catch (error) {
         console.error('Auto-save error:', error);
-        onError?.(error as Error);
+        onErrorRef.current?.(error as Error);
       } finally {
         setIsSaving(false);
       }
@@ -68,7 +78,7 @@ export const useAutoSave = (
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content, enabled, hasUnsavedChanges, interval, isSaving, onSave, onSuccess, onError]);
+  }, [content, enabled, hasUnsavedChanges, interval]);
 
   // Salvar manualmente
   const saveNow = async () => {
@@ -76,13 +86,13 @@ export const useAutoSave = (
 
     setIsSaving(true);
     try {
-      await onSave(content);
+      await onSaveRef.current(content);
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
-      onSuccess?.();
+      onSuccessRef.current?.();
     } catch (error) {
       console.error('Manual save error:', error);
-      onError?.(error as Error);
+      onErrorRef.current?.(error as Error);
     } finally {
       setIsSaving(false);
     }
