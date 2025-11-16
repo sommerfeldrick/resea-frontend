@@ -28,20 +28,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     // Check if user is already logged in
     const initAuth = async () => {
-      const storedUser = authService.getUser();
-      if (storedUser && authService.isAuthenticated()) {
-        try {
-          const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-          setUser(null);
+      try {
+        const storedUser = authService.getUser();
+        if (storedUser && authService.isAuthenticated()) {
+          try {
+            const currentUser = await authService.getCurrentUser();
+            setUser(currentUser);
+          } catch (error) {
+            console.error('Failed to get current user:', error);
+            // Se falhar ao buscar dados do usuário, usar os dados do localStorage
+            setUser(storedUser);
+          }
         }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    initAuth();
+    // Aguardar próximo tick para garantir que tudo está inicializado
+    setTimeout(initAuth, 0);
   }, []);
 
   const login = async (email: string, password: string) => {
