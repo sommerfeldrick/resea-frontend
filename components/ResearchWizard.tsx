@@ -11,7 +11,7 @@
  * FASE 8: Export & Citation
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import { API_BASE_URL } from '../config';
 import { authService } from '../services/authService';
 import { DOCUMENT_TEMPLATES, DocumentTemplate, estimateGenerationTime, calculateWordCount } from '../utils/documentTemplates';
@@ -516,7 +516,8 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       let lastProgressUpdate = 0;
       let lastArticlesUpdate = 0;
       let pendingProgress: SearchProgress | null = null;
-      const UPDATE_INTERVAL = 500; // Atualizar UI no máximo a cada 500ms
+      let pendingArticles: EnrichedArticle[] = [];
+      const UPDATE_INTERVAL = 2000; // Atualizar UI no máximo a cada 2 segundos (aumentado de 500ms)
 
       while (true) {
         const { done, value } = await reader.read();
@@ -543,20 +544,28 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 pendingProgress = data.data;
                 const now = Date.now();
                 if (now - lastProgressUpdate > UPDATE_INTERVAL) {
-                  setSearchProgress(pendingProgress);
+                  // Usar startTransition para updates não-urgentes
+                  const progressToUpdate = pendingProgress;
+                  startTransition(() => {
+                    setSearchProgress(progressToUpdate);
+                  });
                   lastProgressUpdate = now;
                   pendingProgress = null;
                 }
               } else if (data.type === 'articles_batch') {
                 // Acumular artigos dos lotes
                 accumulatedArticles = [...accumulatedArticles, ...data.data];
+                pendingArticles = accumulatedArticles;
                 const now = Date.now();
                 if (now - lastArticlesUpdate > UPDATE_INTERVAL) {
-                  setArticles(accumulatedArticles);
+                  const articlesToUpdate = pendingArticles;
+                  startTransition(() => {
+                    setArticles(articlesToUpdate);
+                  });
                   lastArticlesUpdate = now;
                 }
               } else if (data.type === 'complete') {
-                // Update final - garantir que tudo foi atualizado
+                // Update final - garantir que tudo foi atualizado (sem startTransition pois é urgente)
                 if (pendingProgress) setSearchProgress(pendingProgress);
                 setArticles(accumulatedArticles);
                 setIsLoading(false);
