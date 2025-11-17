@@ -410,7 +410,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (!clarificationSession) return;
 
     const currentQuestion = clarificationSession.questions[currentQuestionIndex];
@@ -423,6 +423,49 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     if (currentQuestion.required && !answers[currentQuestion.id] && hasValidOptions) {
       setError('Por favor, responda a pergunta antes de continuar');
       return;
+    }
+
+    // BRANCHED QUESTIONS: Se acabou de responder Q0 (work type), buscar perguntas específicas
+    if (currentQuestionIndex === 0 && currentQuestion.id === 'q0_work_type') {
+      const workType = answers[currentQuestion.id];
+
+      if (workType) {
+        setIsLoading(true);
+        try {
+          const branchResponse = await fetch(`${API_BASE_URL}/api/research-flow/clarification/branch`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              workType,
+              query: clarificationSession.query
+            })
+          });
+
+          if (!branchResponse.ok) {
+            throw new Error('Falha ao carregar perguntas específicas');
+          }
+
+          const branchData = await branchResponse.json();
+
+          if (branchData.success && branchData.data.questions) {
+            // Substituir as perguntas restantes pelas perguntas ramificadas
+            const updatedSession = {
+              ...clarificationSession,
+              questions: [
+                clarificationSession.questions[0], // Manter Q0
+                ...branchData.data.questions // Adicionar perguntas ramificadas
+              ]
+            };
+
+            setClarificationSession(updatedSession);
+          }
+        } catch (err: any) {
+          console.error('❌ Erro ao buscar perguntas ramificadas:', err);
+          setError('Erro ao carregar perguntas específicas. Continuando com perguntas padrão.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
 
     if (currentQuestionIndex < clarificationSession.questions.length - 1) {
