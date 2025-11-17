@@ -1361,7 +1361,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Processando...
                 </>
-              ) : currentQuestionIndex < clarificationSession.questions.length - 1 ? (
+              ) : (question.id === 'q0_work_type') || (currentQuestionIndex < clarificationSession.questions.length - 1) ? (
                 <>
                   Próxima pergunta
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
