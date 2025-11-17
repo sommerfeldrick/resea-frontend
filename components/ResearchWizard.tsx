@@ -431,6 +431,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
       if (workType) {
         setIsLoading(true);
+        setError(null);
         try {
           const branchResponse = await fetch(`${API_BASE_URL}/api/research-flow/clarification/branch`, {
             method: 'POST',
@@ -458,6 +459,10 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
             };
 
             setClarificationSession(updatedSession);
+
+            // Avançar para a próxima pergunta após carregar perguntas ramificadas
+            setCurrentQuestionIndex(1);
+            return; // Retornar aqui para não executar o código abaixo
           }
         } catch (err: any) {
           console.error('❌ Erro ao buscar perguntas ramificadas:', err);
