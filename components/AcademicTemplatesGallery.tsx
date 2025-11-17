@@ -63,15 +63,23 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ template, onClose, onSubm
       allFilledData[key] = value;
     });
 
-    // Substituir placeholders no template
-    let filledPrompt = template.promptTemplate;
-    template.requiredFields.forEach(field => {
-      const value = field.type === 'tags' ? tags[field.name]?.join(', ') : formData[field.name];
-      const placeholder = `{${field.name}}`;
-      filledPrompt = filledPrompt.replace(new RegExp(placeholder, 'g'), value || '');
-    });
+    // ===================================================================
+    // CONSTRUIR QUERY SIMPLES PARA BUSCA DE ARTIGOS
+    // NÃO usar promptTemplate (que é para gerar texto), mas sim criar
+    // uma query de pesquisa baseada nos dados preenchidos pelo usuário
+    // ===================================================================
 
-    onSubmit(filledPrompt, allFilledData);
+    // Pegar tema principal (pode ser 'tema', 'titulo', ou primeiro campo de texto)
+    const tema = allFilledData.tema || allFilledData.titulo ||
+                 Object.values(formData).find(v => typeof v === 'string' && v.length > 0) || '';
+
+    // Construir query: "{tema}: {descrição do template}"
+    // Exemplo: "Elementos finitos na odontologia: introdução acadêmica"
+    const researchQuery = tema
+      ? `${tema}: ${template.description.toLowerCase()}`
+      : template.description;
+
+    onSubmit(researchQuery, allFilledData);
   };
 
   const handleAddTag = (fieldName: string) => {
