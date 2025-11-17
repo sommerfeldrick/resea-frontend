@@ -1259,6 +1259,27 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
             </>
           )}
 
+          {/* NOVO: Input de texto para perguntas abertas */}
+          {question.type === 'text' && (
+            <div>
+              <textarea
+                id={question.id}
+                value={answers[question.id] || ''}
+                onChange={(e) => handleAnswerQuestion(question.id, e.target.value)}
+                placeholder={question.placeholder || 'Digite sua resposta...'}
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg
+                         focus:border-indigo-600 focus:ring-2 focus:ring-indigo-200
+                         dark:bg-gray-800 dark:text-white
+                         placeholder-gray-400 dark:placeholder-gray-500
+                         transition-colors resize-none"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                💡 Esta pergunta é opcional. Deixe em branco se não tiver nada específico a adicionar.
+              </p>
+            </div>
+          )}
+
           {error && (
             <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
