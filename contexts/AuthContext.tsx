@@ -4,7 +4,7 @@ import { authService, SmileAIUser } from '../services/authService';
 interface AuthContextType {
   user: SmileAIUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, onProgress?: (message: string) => void) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   handleTokenRedirect: (token: string) => Promise<void>;
@@ -52,10 +52,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTimeout(initAuth, 0);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, onProgress?: (message: string) => void) => {
     setLoading(true);
     try {
-      const response = await authService.login(email, password);
+      const response = await authService.login(email, password, onProgress);
       setUser(response.user);
     } catch (error) {
       setLoading(false);

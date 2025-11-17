@@ -65,12 +65,72 @@ class AuthService {
   private readonly USER_KEY = 'smileai_user';
 
   /**
-   * Login with email and password
+   * Wake up server with lightweight ping (for Render cold start)
+   * Returns time taken to wake up
    */
-  async login(email: string, password: string): Promise<AuthResponse> {
-    // Timeout de 35 segundos para permitir cold start do backend (Render free tier)
+  async wakeUpServer(onProgress?: (message: string) => void): Promise<number> {
+    const startTime = Date.now();
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 35000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout para ping
+
+    try {
+      onProgress?.('Conectando ao servidor...');
+
+      // Tentar ping leve primeiro
+      const pingResponse = await fetch(`${API_BASE_URL}/api/health/ping`, {
+        method: 'GET',
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const wakeUpTime = Date.now() - startTime;
+
+      if (pingResponse.ok) {
+        onProgress?.(`Servidor acordado em ${(wakeUpTime / 1000).toFixed(1)}s`);
+      }
+
+      return wakeUpTime;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      const elapsed = Date.now() - startTime;
+
+      // Se demorar muito, ainda pode estar acordando
+      if (error.name === 'AbortError') {
+        onProgress?.('Servidor está demorando para acordar, tentando mesmo assim...');
+      }
+
+      return elapsed;
+    }
+  }
+
+  /**
+   * Login with email and password
+   * Includes server wake-up for cold starts
+   */
+  async login(
+    email: string,
+    password: string,
+    onProgress?: (message: string) => void
+  ): Promise<AuthResponse> {
+    // STEP 1: Wake up server primeiro (Render free tier pode estar dormindo)
+    try {
+      const wakeUpTime = await this.wakeUpServer(onProgress);
+
+      // Se demorou mais de 30s para acordar, avisar usuário
+      if (wakeUpTime > 30000) {
+        onProgress?.('Servidor acordado! Fazendo login...');
+      } else {
+        onProgress?.('Fazendo login...');
+      }
+    } catch (error) {
+      // Se ping falhar, tentar login mesmo assim
+      console.warn('Wake up ping failed, trying login anyway:', error);
+      onProgress?.('Tentando fazer login...');
+    }
+
+    // STEP 2: Fazer login com timeout aumentado (70s)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 70000);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
