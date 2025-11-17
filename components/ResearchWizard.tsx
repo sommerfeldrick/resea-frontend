@@ -1395,6 +1395,79 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
     const filters = searchStrategy.filters || {};
     const dateRange = filters.dateRange || { start: 2020, end: 2025 };
 
+    // Construir frase descritiva rica com contexto completo
+    const buildRichDescription = () => {
+      const topic = searchStrategy.topic || query;
+
+      // Mapear workType para labels
+      const workTypeLabels: Record<string, string> = {
+        'tcc': 'TCC',
+        'dissertacao': 'Dissertação de Mestrado',
+        'tese': 'Tese de Doutorado',
+        'artigo_cientifico': 'Artigo Científico',
+        'revisao_sistematica': 'Revisão Sistemática',
+        'projeto_pesquisa': 'Projeto de Pesquisa',
+        'relatorio_tecnico': 'Relatório Técnico'
+      };
+
+      // Mapear section para labels
+      const sectionLabels: Record<string, string> = {
+        'introducao': 'Introdução',
+        'revisao': 'Revisão de Literatura',
+        'metodologia': 'Metodologia',
+        'resultados': 'Resultados',
+        'discussao': 'Discussão',
+        'conclusao': 'Conclusão',
+        'protocolo': 'Protocolo',
+        'criterios': 'Critérios de Seleção',
+        'completo': 'Documento Completo',
+        'empirico': 'Artigo Empírico',
+        'estudo_caso': 'Estudo de Caso',
+        'teorico': 'Artigo Teórico'
+      };
+
+      // Mapear detailLevel para labels
+      const detailLabels: Record<string, string> = {
+        'basico': 'nível básico',
+        'intermediario': 'nível intermediário',
+        'avancado': 'nível avançado'
+      };
+
+      let parts: string[] = [];
+
+      // Adicionar seção se disponível
+      if (structuredData?.section && sectionLabels[structuredData.section]) {
+        parts.push(sectionLabels[structuredData.section]);
+      }
+
+      // Adicionar "sobre [tema]"
+      parts.push(`sobre ${topic}`);
+
+      // Adicionar tipo de trabalho
+      if (structuredData?.workType && workTypeLabels[structuredData.workType]) {
+        parts.push(`para ${workTypeLabels[structuredData.workType]}`);
+      }
+
+      // Adicionar profundidade
+      if (structuredData?.detailLevel && detailLabels[structuredData.detailLevel]) {
+        parts.push(`(${detailLabels[structuredData.detailLevel]})`);
+      }
+
+      // Adicionar período
+      if (dateRange.start && dateRange.end) {
+        parts.push(`artigos de ${dateRange.start}-${dateRange.end}`);
+      }
+
+      // Adicionar contexto específico
+      if (structuredData?.additionalContext) {
+        parts.push(`focado em ${structuredData.additionalContext}`);
+      }
+
+      return parts.join(', ');
+    };
+
+    const richDescription = buildRichDescription();
+
     return (
       <div className="max-w-4xl mx-auto p-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -1420,8 +1493,8 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                 Buscar sobre:
               </h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                "{searchStrategy.topic || 'Sem título'}"
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                "{richDescription}"
               </p>
             </div>
 
