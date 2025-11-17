@@ -99,6 +99,13 @@ interface SearchProgress {
   };
   formatsDetected: Record<string, number>;
   elapsedTime: number;
+  // 🎯 ETAPA 4: Status de validação e refinamento
+  validationStatus?: {
+    iteration: number;
+    gapsFound: number;
+    gaps: string[];
+    articlesAdded: number;
+  };
 }
 
 interface EnrichedArticle {
@@ -565,6 +572,36 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                     setArticles(articlesToUpdate);
                   });
                   lastArticlesUpdate = now;
+                }
+              } else if (data.type === 'validation') {
+                // 🎯 ETAPA 4: Validação e refinamento de artigos
+                const { iteration, gapsFound, gaps, articlesAdded } = data.data;
+
+                console.log(`🎯 Validação Iteração ${iteration}/3:`, {
+                  gapsFound,
+                  articlesAdded,
+                  gaps: gaps.slice(0, 3).join(', ')
+                });
+
+                // Atualizar searchProgress com status de validação
+                setSearchProgress(prev => ({
+                  ...prev!,
+                  validationStatus: {
+                    iteration,
+                    gapsFound,
+                    gaps,
+                    articlesAdded
+                  }
+                }));
+
+                // Log informativo
+                if (gapsFound > 0 && articlesAdded > 0) {
+                  console.info(
+                    `Refinando: ${gapsFound} tópicos sem cobertura. ` +
+                    `Adicionando ${articlesAdded} artigos específicos...`
+                  );
+                } else if (gapsFound === 0) {
+                  console.info('✅ Todos os tópicos cobertos!');
                 }
               } else if (data.type === 'complete') {
                 // Update final - garantir que tudo foi atualizado (sem startTransition pois é urgente)
@@ -1605,6 +1642,60 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                         {format}: {count}
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 🎯 ETAPA 4: Validation & Refinement Status */}
+              {searchProgress.validationStatus && (
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="flex-shrink-0 w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                        🎯 Refinando busca (iteração {searchProgress.validationStatus.iteration}/3)
+                      </h4>
+
+                      {searchProgress.validationStatus.gapsFound > 0 ? (
+                        <div className="mt-2 space-y-2">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            Encontrados {searchProgress.validationStatus.gapsFound} tópicos sem cobertura adequada
+                          </p>
+
+                          {searchProgress.validationStatus.gaps.length > 0 && (
+                            <ul className="list-disc list-inside text-sm text-blue-600 dark:text-blue-400 space-y-1 ml-2">
+                              {searchProgress.validationStatus.gaps.slice(0, 3).map((gap, idx) => (
+                                <li key={idx} className="line-clamp-1">{gap}</li>
+                              ))}
+                              {searchProgress.validationStatus.gaps.length > 3 && (
+                                <li className="text-blue-500 dark:text-blue-500">
+                                  + {searchProgress.validationStatus.gaps.length - 3} outros tópicos...
+                                </li>
+                              )}
+                            </ul>
+                          )}
+
+                          {searchProgress.validationStatus.articlesAdded > 0 && (
+                            <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-1">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Adicionando {searchProgress.validationStatus.articlesAdded} artigos específicos
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Todos os tópicos cobertos!
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
