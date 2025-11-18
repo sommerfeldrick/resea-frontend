@@ -574,7 +574,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       let lastArticlesUpdate = 0;
       let pendingProgress: SearchProgress | null = null;
       let pendingArticles: EnrichedArticle[] = [];
-      const UPDATE_INTERVAL = 2000; // Atualizar UI no máximo a cada 2 segundos (aumentado de 500ms)
+      const UPDATE_INTERVAL = 500; // Atualizar UI no máximo a cada 500ms para visualização em tempo real
 
       while (true) {
         const { done, value } = await reader.read();
@@ -602,6 +602,8 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
                 // 🎨 REAL-TIME VISUALIZATION: Process new articles from progress events
                 if (data.data.newArticles && data.data.newArticles.length > 0) {
+                  console.log(`📊 Received ${data.data.newArticles.length} new articles via SSE`);
+
                   // Add new articles to accumulated list
                   const newArticlesFromProgress = data.data.newArticles.map((a: any) => ({
                     id: a.id,
@@ -623,6 +625,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
                   accumulatedArticles = [...accumulatedArticles, ...newArticlesFromProgress];
                   pendingArticles = accumulatedArticles;
+                  console.log(`📚 Total accumulated articles: ${accumulatedArticles.length}`);
                 }
 
                 const now = Date.now();
@@ -630,6 +633,7 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                   // Usar startTransition para updates não-urgentes
                   const progressToUpdate = pendingProgress;
                   const articlesToUpdate = pendingArticles;
+                  console.log(`🔄 Updating UI with ${articlesToUpdate.length} articles`);
                   startTransition(() => {
                     setSearchProgress(progressToUpdate);
                     if (articlesToUpdate.length > 0) {
