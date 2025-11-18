@@ -599,14 +599,45 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
               if (data.type === 'progress') {
                 pendingProgress = data.data;
+
+                // 🎨 REAL-TIME VISUALIZATION: Process new articles from progress events
+                if (data.data.newArticles && data.data.newArticles.length > 0) {
+                  // Add new articles to accumulated list
+                  const newArticlesFromProgress = data.data.newArticles.map((a: any) => ({
+                    id: a.id,
+                    title: a.title,
+                    authors: [],
+                    year: a.year || 0,
+                    abstract: '',
+                    source: a.source,
+                    url: '',
+                    citationCount: a.citationCount || 0,
+                    score: {
+                      score: a.score,
+                      priority: a.priority,
+                      reasons: []
+                    },
+                    format: 'pdf',
+                    hasFulltext: a.hasFulltext
+                  }));
+
+                  accumulatedArticles = [...accumulatedArticles, ...newArticlesFromProgress];
+                  pendingArticles = accumulatedArticles;
+                }
+
                 const now = Date.now();
                 if (now - lastProgressUpdate > UPDATE_INTERVAL) {
                   // Usar startTransition para updates não-urgentes
                   const progressToUpdate = pendingProgress;
+                  const articlesToUpdate = pendingArticles;
                   startTransition(() => {
                     setSearchProgress(progressToUpdate);
+                    if (articlesToUpdate.length > 0) {
+                      setArticles(articlesToUpdate);
+                    }
                   });
                   lastProgressUpdate = now;
+                  lastArticlesUpdate = now;
                   pendingProgress = null;
                 }
               } else if (data.type === 'articles_batch') {
@@ -1854,17 +1885,22 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           )}
         </div>
 
-        {/* Preview de Artigos Encontrados */}
+        {/* Preview de Artigos Encontrados - Real-time visualization */}
         {articles.length > 0 && (
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-              Artigos Mais Relevantes Encontrados ({articles.length})
+          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 animate-fadeIn">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              Artigos Encontrados em Tempo Real ({articles.length})
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
-              {articles.slice(0, 10).map((article) => (
+              {articles.slice(0, 30).map((article, idx) => (
                 <div
                   key={article.id}
-                  className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors"
+                  className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300 hover:shadow-md animate-slideInUp"
+                  style={{ animationDelay: `${Math.min(idx * 50, 1000)}ms` }}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <span className={`text-xs px-2 py-1 rounded font-medium ${
