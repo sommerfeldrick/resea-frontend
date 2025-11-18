@@ -1885,6 +1885,127 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
           )}
         </div>
 
+        {/* 🧠 Mind Map Visualization - Real-time graph */}
+        {articles.length > 0 && (
+          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              Mapa Mental de Artigos ({articles.length})
+            </h3>
+            <div className="relative w-full h-[400px] bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+              <svg className="w-full h-full">
+                {/* Render connections first (so they appear behind nodes) */}
+                {articles.slice(0, 30).map((article, i) => {
+                  // Calculate simple circular layout
+                  const centerX = 50;
+                  const centerY = 50;
+                  const radius = 35;
+                  const angle = (i / Math.min(articles.length, 30)) * 2 * Math.PI;
+                  const x1 = centerX + radius * Math.cos(angle);
+                  const y1 = centerY + radius * Math.sin(angle);
+
+                  // Draw connections to nearby articles (simple similarity heuristic)
+                  return articles.slice(i + 1, Math.min(i + 4, articles.length)).map((otherArticle, j) => {
+                    const otherIndex = i + 1 + j;
+                    const angle2 = (otherIndex / Math.min(articles.length, 30)) * 2 * Math.PI;
+                    const x2 = centerX + radius * Math.cos(angle2);
+                    const y2 = centerY + radius * Math.sin(angle2);
+
+                    // Check if articles share keywords or are from same source
+                    const shareSource = article.source === otherArticle.source;
+                    const samePriority = article.score.priority === otherArticle.score.priority;
+
+                    if (shareSource || samePriority) {
+                      return (
+                        <line
+                          key={`${i}-${otherIndex}`}
+                          x1={`${x1}%`}
+                          y1={`${y1}%`}
+                          x2={`${x2}%`}
+                          y2={`${y2}%`}
+                          stroke={samePriority ? "#6366f1" : "#9ca3af"}
+                          strokeWidth={samePriority ? "2" : "1"}
+                          strokeOpacity="0.3"
+                          className="transition-all duration-300"
+                        />
+                      );
+                    }
+                    return null;
+                  });
+                })}
+
+                {/* Render nodes */}
+                {articles.slice(0, 30).map((article, i) => {
+                  const centerX = 50;
+                  const centerY = 50;
+                  const radius = 35;
+                  const angle = (i / Math.min(articles.length, 30)) * 2 * Math.PI;
+                  const x = centerX + radius * Math.cos(angle);
+                  const y = centerY + radius * Math.sin(angle);
+
+                  const color =
+                    article.score.priority === 'P1'
+                      ? '#10b981' // green
+                      : article.score.priority === 'P2'
+                      ? '#3b82f6' // blue
+                      : '#6b7280'; // gray
+
+                  return (
+                    <g key={article.id} className="cursor-pointer group animate-fadeIn" style={{ animationDelay: `${i * 50}ms` }}>
+                      {/* Node circle */}
+                      <circle
+                        cx={`${x}%`}
+                        cy={`${y}%`}
+                        r={article.hasFulltext ? "12" : "8"}
+                        fill={color}
+                        stroke="white"
+                        strokeWidth="2"
+                        className="transition-all duration-300 group-hover:r-[16] drop-shadow-md"
+                      />
+                      {/* Fulltext indicator */}
+                      {article.hasFulltext && (
+                        <circle
+                          cx={`${x}%`}
+                          cy={`${y}%`}
+                          r="6"
+                          fill="white"
+                          fillOpacity="0.7"
+                        />
+                      )}
+                      {/* Title on hover */}
+                      <title>{article.title}</title>
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Legend */}
+              <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-gray-700 dark:text-gray-300">P1 (Excelente)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-gray-700 dark:text-gray-300">P2 (Bom)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                    <span className="text-gray-700 dark:text-gray-300">P3 (Aceitável)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-indigo-500 ring-2 ring-white"></div>
+                    <span className="text-gray-700 dark:text-gray-300">Texto completo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Preview de Artigos Encontrados - Real-time visualization */}
         {articles.length > 0 && (
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 animate-fadeIn">
