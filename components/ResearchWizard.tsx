@@ -630,16 +630,17 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
 
                 const now = Date.now();
                 if (now - lastProgressUpdate > UPDATE_INTERVAL) {
-                  // Usar startTransition para updates não-urgentes
+                  // Update UI immediately for real-time visualization
                   const progressToUpdate = pendingProgress;
                   const articlesToUpdate = pendingArticles;
                   console.log(`🔄 Updating UI with ${articlesToUpdate.length} articles`);
-                  startTransition(() => {
-                    setSearchProgress(progressToUpdate);
-                    if (articlesToUpdate.length > 0) {
-                      setArticles(articlesToUpdate);
-                    }
-                  });
+
+                  // Direct updates (no startTransition) for immediate rendering
+                  setSearchProgress(progressToUpdate);
+                  if (articlesToUpdate.length > 0) {
+                    setArticles(articlesToUpdate);
+                  }
+
                   lastProgressUpdate = now;
                   lastArticlesUpdate = now;
                   pendingProgress = null;
@@ -651,9 +652,8 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
                 const now = Date.now();
                 if (now - lastArticlesUpdate > UPDATE_INTERVAL) {
                   const articlesToUpdate = pendingArticles;
-                  startTransition(() => {
-                    setArticles(articlesToUpdate);
-                  });
+                  // Direct update for immediate rendering
+                  setArticles(articlesToUpdate);
                   lastArticlesUpdate = now;
                 }
               } else if (data.type === 'validation') {
