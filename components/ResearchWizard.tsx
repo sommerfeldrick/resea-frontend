@@ -19,6 +19,7 @@ import Toast, { useToast } from './Toast';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
 import { RichTextEditor } from './RichTextEditor';
+import { formatABNT, formatAPA, formatVancouver } from '../utils/citations';
 
 // ============================================
 // Types
