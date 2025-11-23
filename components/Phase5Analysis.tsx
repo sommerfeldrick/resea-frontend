@@ -3,8 +3,10 @@
  * Instead of technical graph visualization, provides practical information
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { formatABNT, formatAPA, formatVancouver } from '../utils/citations';
+import { ArticleDetailsModal } from './ArticleDetailsModal';
+import { BulkActionsBar } from './BulkActionsBar';
 
 interface Article {
   id: string;
@@ -54,6 +56,72 @@ export const Phase5Analysis: React.FC<Props> = ({
   onProceed,
   onSuccess
 }) => {
+  // State management
+  const [selectedArticleForDetails, setSelectedArticleForDetails] = useState<Article | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [expandedSimilar, setExpandedSimilar] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'score' | 'citations' | 'year' | 'title'>('score');
+  const [filterP1Only, setFilterP1Only] = useState(false);
+  const [filterFulltextOnly, setFilterFulltextOnly] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const articlesPerPage = 20;
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('resea-favorites');
+    if (savedFavorites) {
+      setFavorites(new Set(JSON.parse(savedFavorites)));
+    }
+  }, []);
+
+  // Save favorites to localStorage
+  useEffect(() => {
+    localStorage.setItem('resea-favorites', JSON.stringify([...favorites]));
+  }, [favorites]);
+
+  // Toggle favorite
+  const toggleFavorite = (id: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(id)) {
+      newFavorites.delete(id);
+    } else {
+      newFavorites.add(id);
+    }
+    setFavorites(newFavorites);
+  };
+
+  // Toggle selection
+  const toggleSelection = (id: string) => {
+    const newSelection = new Set(selectedIds);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedIds(newSelection);
+  };
+
+  // Select all visible articles
+  const selectAllVisible = () => {
+    const visibleIds = paginatedArticles.map(a => a.id);
+    setSelectedIds(new Set([...selectedIds, ...visibleIds]));
+  };
+
+  // Remove selected articles
+  const handleRemoveSelected = () => {
+    if (confirm(`Remover ${selectedIds.size} artigos selecionados?`)) {
+      // Remove from favorites too
+      const newFavorites = new Set(favorites);
+      selectedIds.forEach(id => newFavorites.delete(id));
+      setFavorites(newFavorites);
+
+      // Clear selection
+      setSelectedIds(new Set());
+      onSuccess(`${selectedIds.size} artigos removidos`);
+    }
+  };
+
   if (!knowledgeGraph) {
     return (
       <div className="max-w-4xl mx-auto p-8">
@@ -67,9 +135,58 @@ export const Phase5Analysis: React.FC<Props> = ({
     );
   }
 
-  // Sort articles by score
-  const topArticles = [...articles].sort((a, b) => b.score.score - a.score.score).slice(0, 10);
-  const recentArticles = [...articles].filter(a => a.year >= 2023).slice(0, 3);
+  // Sorting and filtering logic
+  const sortedAndFilteredArticles = useMemo(() => {
+    let result = [...articles];
+
+    // Apply filters
+    if (filterP1Only) {
+      result = result.filter(a => a.score.priority === 'P1');
+    }
+    if (filterFulltextOnly) {
+      result = result.filter(a => a.hasFulltext);
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'score':
+          return b.score.score - a.score.score;
+        case 'citations':
+          return (b.citationCount || 0) - (a.citationCount || 0);
+        case 'year':
+          return b.year - a.year;
+        case 'title':
+          return a.title.localeCompare(b.title);
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [articles, sortBy, filterP1Only, filterFulltextOnly]);
+
+  // Pagination
+  const paginatedArticles = useMemo(() => {
+    const startIndex = (currentPage - 1) * articlesPerPage;
+    return sortedAndFilteredArticles.slice(startIndex, startIndex + articlesPerPage);
+  }, [sortedAndFilteredArticles, currentPage]);
+
+  const totalPages = Math.ceil(sortedAndFilteredArticles.length / articlesPerPage);
+
+  // Get favorite articles
+  const favoriteArticles = useMemo(() => {
+    return articles.filter(a => favorites.has(a.id)).sort((a, b) => b.score.score - a.score.score);
+  }, [articles, favorites]);
+
+  // Top articles for insights section
+  const topArticles = useMemo(() => {
+    return [...articles].sort((a, b) => b.score.score - a.score.score).slice(0, 10);
+  }, [articles]);
+
+  const recentArticles = useMemo(() => {
+    return [...articles].filter(a => a.year >= 2023).slice(0, 3);
+  }, [articles]);
 
   // Calculate statistics
   const totalCitations = articles.reduce((sum, a) => sum + (a.citationCount || 0), 0);
@@ -140,61 +257,286 @@ export const Phase5Analysis: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 1. PREVIEW DOS MELHORES ARTIGOS */}
+      {/* FAVORITES SECTION */}
+      {favoriteArticles.length > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl shadow-lg p-6 border-2 border-yellow-300 dark:border-yellow-700">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">⭐</span>
+            Meus Favoritos ({favoriteArticles.length})
+          </h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            Artigos marcados como favoritos serão priorizados na geração de conteúdo.
+          </p>
+          <div className="space-y-3">
+            {favoriteArticles.map((article) => (
+              <div key={article.id} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-yellow-200 dark:border-yellow-800 flex items-center gap-3">
+                <button
+                  onClick={() => toggleFavorite(article.id)}
+                  className="text-2xl hover:scale-110 transition-transform"
+                >
+                  ⭐
+                </button>
+                <div className="flex-1 cursor-pointer" onClick={() => setSelectedArticleForDetails(article)}>
+                  <h4 className="font-medium text-gray-900 dark:text-white text-sm hover:text-indigo-600 dark:hover:text-indigo-400">
+                    {article.title}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {article.authors.slice(0, 2).join(', ')}{article.authors.length > 2 ? ' et al.' : ''} • {article.year}
+                  </p>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
+                  article.score.priority === 'P1'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                    : article.score.priority === 'P2'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  {article.score.priority}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FILTERS AND SORTING */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ordenar por:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              <option value="score">Score (maior)</option>
+              <option value="citations">Citações (maior)</option>
+              <option value="year">Ano (mais recente)</option>
+              <option value="title">Título (A-Z)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterP1Only}
+                onChange={(e) => setFilterP1Only(e.target.checked)}
+                className="rounded"
+              />
+              Apenas P1
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterFulltextOnly}
+                onChange={(e) => setFilterFulltextOnly(e.target.checked)}
+                className="rounded"
+              />
+              Apenas com texto completo
+            </label>
+          </div>
+
+          <button
+            onClick={selectAllVisible}
+            className="ml-auto text-sm px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+          >
+            Selecionar todos ({paginatedArticles.length})
+          </button>
+        </div>
+
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Mostrando {sortedAndFilteredArticles.length} artigos • Página {currentPage} de {totalPages}
+        </div>
+      </div>
+
+      {/* ALL ARTICLES WITH FULL FEATURES */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="text-2xl">⭐</span>
-          Top 10 Artigos Mais Relevantes
+          <span className="text-2xl">📚</span>
+          Todos os Artigos Encontrados
         </h3>
         <div className="space-y-4">
-          {topArticles.map((article, idx) => (
-            <div key={article.id} className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-600 transition-colors">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400">
-                  {idx + 1}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white flex-1 pr-4">{article.title}</h4>
-                    <span className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
-                      article.score.priority === 'P1'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                        : article.score.priority === 'P2'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
-                    }`}>
-                      Score {article.score.score}
-                    </span>
+          {paginatedArticles.map((article, idx) => {
+            const isFavorite = favorites.has(article.id);
+            const isSelected = selectedIds.has(article.id);
+            const isExpanded = expandedSimilar === article.id;
+
+            return (
+              <div key={article.id}>
+                <div className={`p-4 border-2 rounded-lg transition-all ${
+                  isSelected
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelection(article.id)}
+                      className="mt-1 w-5 h-5 rounded"
+                    />
+
+                    {/* Article Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900 dark:text-white flex-1 pr-4">{article.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
+                            article.score.priority === 'P1'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                              : article.score.priority === 'P2'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                          }`}>
+                            Score {article.score.score}
+                          </span>
+                          <button
+                            onClick={() => toggleFavorite(article.id)}
+                            className="text-xl hover:scale-125 transition-transform"
+                            title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                          >
+                            {isFavorite ? '⭐' : '☆'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {article.authors.slice(0, 3).join(', ')}{article.authors.length > 3 ? ' et al.' : ''} • {article.year}
+                        {article.journalInfo && ` • ${article.journalInfo}`}
+                      </p>
+
+                      {article.abstract && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mb-3">
+                          {article.abstract.substring(0, 200)}...
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2 flex-wrap mb-3">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          📚 {article.citationCount || 0} citações
+                        </span>
+                        {article.hasFulltext && (
+                          <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 px-2 py-1 rounded">
+                            📄 Texto completo
+                          </span>
+                        )}
+                        {article.score.reasons.length > 0 && (
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400">
+                            ✨ {article.score.reasons[0]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setSelectedArticleForDetails(article)}
+                          className="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                        >
+                          📖 Ver Detalhes
+                        </button>
+
+                        {article.doi && (
+                          <a
+                            href={`https://doi.org/${article.doi}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          >
+                            🔗 Abrir DOI
+                          </a>
+                        )}
+
+                        {article.pdfUrl && (
+                          <a
+                            href={article.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                          >
+                            📄 Abrir PDF
+                          </a>
+                        )}
+
+                        <button
+                          onClick={() => setExpandedSimilar(isExpanded ? null : article.id)}
+                          className="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                        >
+                          {isExpanded ? '▲ Ocultar' : '🔍 Buscar Similares'}
+                        </button>
+
+                        {/* Citation Dropdown */}
+                        <div className="relative group">
+                          <button className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                            📋 Citação ▼
+                          </button>
+                          <div className="absolute bottom-full mb-1 left-0 hidden group-hover:block bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10">
+                            <button
+                              onClick={() => copyToClipboard(formatABNT(article), 'ABNT')}
+                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                            >
+                              Copiar ABNT
+                            </button>
+                            <button
+                              onClick={() => copyToClipboard(formatAPA(article), 'APA')}
+                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                            >
+                              Copiar APA
+                            </button>
+                            <button
+                              onClick={() => copyToClipboard(formatVancouver(article, idx + 1), 'Vancouver')}
+                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                            >
+                              Copiar Vancouver
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {article.authors.slice(0, 3).join(', ')}{article.authors.length > 3 ? ' et al.' : ''} • {article.year}
-                    {article.journalInfo && ` • ${article.journalInfo}`}
-                  </p>
-                  {article.abstract && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mb-3">
-                      {article.abstract.substring(0, 200)}...
+                </div>
+
+                {/* Expanded Similar Articles Section */}
+                {isExpanded && (
+                  <div className="ml-12 mt-2 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-500">
+                    <h5 className="font-semibold text-sm text-gray-900 dark:text-white mb-2">
+                      🔍 Artigos Similares
+                    </h5>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Funcionalidade de busca de artigos similares será implementada em breve.
+                      Por enquanto, você pode usar os filtros acima para encontrar artigos relacionados.
                     </p>
-                  )}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      📚 {article.citationCount || 0} citações
-                    </span>
-                    {article.hasFulltext && (
-                      <span className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 px-2 py-1 rounded">
-                        📄 Texto completo
-                      </span>
-                    )}
-                    {article.score.reasons.length > 0 && (
-                      <span className="text-xs text-indigo-600 dark:text-indigo-400">
-                        ✨ {article.score.reasons[0]}
-                      </span>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              ← Anterior
+            </button>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              Próxima →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 2. INSIGHTS ACIONÁVEIS */}
@@ -403,6 +745,21 @@ export const Phase5Analysis: React.FC<Props> = ({
           </svg>
         </button>
       </div>
+
+      {/* Article Details Modal */}
+      <ArticleDetailsModal
+        article={selectedArticleForDetails}
+        onClose={() => setSelectedArticleForDetails(null)}
+      />
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedIds={selectedIds}
+        articles={articles}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onRemoveSelected={handleRemoveSelected}
+        onSuccess={onSuccess}
+      />
     </div>
   );
 };
