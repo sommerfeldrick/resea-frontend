@@ -3,7 +3,7 @@
  * Instead of technical graph visualization, provides practical information
  */
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { formatABNT, formatAPA, formatVancouver } from '../utils/citations';
 
 interface Article {
@@ -23,6 +23,9 @@ interface Article {
     reasons: string[];
   };
   hasFulltext: boolean;
+  pdfUrl?: string;
+  fullContent?: string;
+  sections?: Record<string, string>;
 }
 
 interface KnowledgeGraph {
