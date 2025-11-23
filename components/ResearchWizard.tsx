@@ -20,6 +20,7 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { AutoSaveIndicator } from './AutoSaveIndicator';
 import { RichTextEditor } from './RichTextEditor';
 import { formatABNT, formatAPA, formatVancouver } from '../utils/citations';
+import { Phase5Analysis } from './Phase5Analysis';
 
 // ============================================
 // Types
@@ -3166,7 +3167,15 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
       {currentPhase === 'clarification' && renderPhase2Clarification()}
       {currentPhase === 'strategy' && renderPhase3Strategy()}
       {currentPhase === 'search' && renderPhase4Search()}
-      {currentPhase === 'analysis' && renderPhase5Analysis()}
+      {currentPhase === 'analysis' && (
+        <Phase5Analysis
+          articles={articles}
+          knowledgeGraph={knowledgeGraph}
+          onBack={() => setCurrentPhase('search')}
+          onProceed={handleProceedToGeneration}
+          onSuccess={success}
+        />
+      )}
       {currentPhase === 'generation' && renderPhase6Generation()}
       {currentPhase === 'editing' && renderPhase7Editing()}
       {currentPhase === 'export' && renderPhase8Export()}
