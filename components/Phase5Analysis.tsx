@@ -60,7 +60,7 @@ export const Phase5Analysis: React.FC<Props> = ({
   const [selectedArticleForDetails, setSelectedArticleForDetails] = useState<Article | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [expandedSimilar, setExpandedSimilar] = useState<string | null>(null);
+  const [citationDropdownOpen, setCitationDropdownOpen] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'score' | 'citations' | 'year' | 'title'>('score');
   const [filterP1Only, setFilterP1Only] = useState(false);
   const [filterFulltextOnly, setFilterFulltextOnly] = useState(false);
@@ -362,7 +362,7 @@ export const Phase5Analysis: React.FC<Props> = ({
           {paginatedArticles.map((article, idx) => {
             const isFavorite = favorites.has(article.id);
             const isSelected = selectedIds.has(article.id);
-            const isExpanded = expandedSimilar === article.id;
+            const isCitationOpen = citationDropdownOpen === article.id;
 
             return (
               <div key={article.id}>
@@ -462,56 +462,50 @@ export const Phase5Analysis: React.FC<Props> = ({
                           </a>
                         )}
 
-                        <button
-                          onClick={() => setExpandedSimilar(isExpanded ? null : article.id)}
-                          className="text-xs px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-                        >
-                          {isExpanded ? '▲ Ocultar' : '🔍 Buscar Similares'}
-                        </button>
-
-                        {/* Citation Dropdown */}
-                        <div className="relative group">
-                          <button className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
+                        {/* Citation Dropdown - Click to open */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setCitationDropdownOpen(isCitationOpen ? null : article.id)}
+                            className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                          >
                             📋 Citação ▼
                           </button>
-                          <div className="absolute bottom-full mb-1 left-0 hidden group-hover:block bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10">
-                            <button
-                              onClick={() => copyToClipboard(formatABNT(article), 'ABNT')}
-                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
-                            >
-                              Copiar ABNT
-                            </button>
-                            <button
-                              onClick={() => copyToClipboard(formatAPA(article), 'APA')}
-                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
-                            >
-                              Copiar APA
-                            </button>
-                            <button
-                              onClick={() => copyToClipboard(formatVancouver(article, idx + 1), 'Vancouver')}
-                              className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
-                            >
-                              Copiar Vancouver
-                            </button>
-                          </div>
+                          {isCitationOpen && (
+                            <div className="absolute bottom-full mb-1 left-0 bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10">
+                              <button
+                                onClick={() => {
+                                  copyToClipboard(formatABNT(article), 'ABNT');
+                                  setCitationDropdownOpen(null);
+                                }}
+                                className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                              >
+                                Copiar ABNT
+                              </button>
+                              <button
+                                onClick={() => {
+                                  copyToClipboard(formatAPA(article), 'APA');
+                                  setCitationDropdownOpen(null);
+                                }}
+                                className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                              >
+                                Copiar APA
+                              </button>
+                              <button
+                                onClick={() => {
+                                  copyToClipboard(formatVancouver(article, idx + 1), 'Vancouver');
+                                  setCitationDropdownOpen(null);
+                                }}
+                                className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
+                              >
+                                Copiar Vancouver
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Expanded Similar Articles Section */}
-                {isExpanded && (
-                  <div className="ml-12 mt-2 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-500">
-                    <h5 className="font-semibold text-sm text-gray-900 dark:text-white mb-2">
-                      🔍 Artigos Similares
-                    </h5>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      Funcionalidade de busca de artigos similares será implementada em breve.
-                      Por enquanto, você pode usar os filtros acima para encontrar artigos relacionados.
-                    </p>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -588,119 +582,7 @@ export const Phase5Analysis: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* 3. ESTRUTURA SUGERIDA */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="text-2xl">📝</span>
-          Estrutura Sugerida para sua Introdução
-        </h3>
-        <div className="space-y-4">
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm">1</span>
-              <h4 className="font-semibold text-gray-900 dark:text-white">Contextualização</h4>
-            </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 ml-10 mb-2">
-              Apresente o tema geral e sua importância. Use artigos altamente citados:
-            </p>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 ml-10 space-y-1">
-              {topArticles.slice(0, 3).map((article) => (
-                <li key={article.id} className="line-clamp-1">
-                  → {article.authors[0]} ({article.year}) - {article.citationCount || 0} citações
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm">2</span>
-              <h4 className="font-semibold text-gray-900 dark:text-white">Problema de Pesquisa</h4>
-            </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 ml-10">
-              {knowledgeGraph.insights.gaps.length > 0
-                ? `Identifique a lacuna: "${knowledgeGraph.insights.gaps[0]}"`
-                : 'Identifique limitações nos estudos atuais e justifique seu trabalho'}
-            </p>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-sm">3</span>
-              <h4 className="font-semibold text-gray-900 dark:text-white">Justificativa</h4>
-            </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 ml-10">
-              Reforce com números: {totalCitations} citações totais mostram a relevância do tema.
-              Use artigos recentes para mostrar atualidade.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. CITAÇÕES PRONTAS */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="text-2xl">📚</span>
-          Citações Prontas - Top 3 Artigos
-        </h3>
-        <div className="space-y-6">
-          {topArticles.slice(0, 3).map((article, idx) => (
-            <div key={article.id} className="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">
-                {idx + 1}. {article.title.substring(0, 60)}...
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">ABNT</span>
-                    <button
-                      onClick={() => copyToClipboard(formatABNT(article), 'ABNT')}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium"
-                    >
-                      📋 Copiar
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                    {formatABNT(article)}
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">APA</span>
-                    <button
-                      onClick={() => copyToClipboard(formatAPA(article), 'APA')}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium"
-                    >
-                      📋 Copiar
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                    {formatAPA(article)}
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Vancouver</span>
-                    <button
-                      onClick={() => copyToClipboard(formatVancouver(article, idx + 1), 'Vancouver')}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium"
-                    >
-                      📋 Copiar
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                    {formatVancouver(article, idx + 1)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 6. GAPS COMO OPORTUNIDADES */}
+      {/* GAPS COMO OPORTUNIDADES */}
       {knowledgeGraph.insights.gaps.length > 0 && (
         <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl shadow-lg p-6 border-2 border-orange-200 dark:border-orange-800">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">

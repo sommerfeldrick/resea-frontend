@@ -140,34 +140,57 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
                 </svg>
                 Informações de Publicação
               </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">Fonte:</span>
-                  <span className="ml-2 font-medium text-gray-900 dark:text-white">{article.source}</span>
-                </div>
+              <div className="space-y-2 text-sm">
                 {article.journalInfo && (
-                  <div>
-                    <span className="text-gray-600 dark:text-gray-400">Journal:</span>
-                    <span className="ml-2 font-medium text-gray-900 dark:text-white">{article.journalInfo}</span>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Journal:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{article.journalInfo}</span>
                   </div>
                 )}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Ano:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{article.year}</span>
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Citações:</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{article.citationCount || 0}</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Autores:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{article.authors.join(', ')}</span>
+                </div>
                 {article.doi && (
-                  <div className="col-span-2">
-                    <span className="text-gray-600 dark:text-gray-400">DOI:</span>
+                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">DOI:</span>
                     <a
                       href={`https://doi.org/${article.doi}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ml-2 text-indigo-600 dark:text-indigo-400 hover:underline font-mono text-xs"
+                      className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono text-xs break-all"
                     >
                       {article.doi}
                     </a>
                   </div>
                 )}
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">Metodologia:</span>
-                  <span className="ml-2 font-medium text-gray-900 dark:text-white">{methodology}</span>
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Metodologia Detectada:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{methodology}</span>
                 </div>
+                {article.url && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">URL Original:</span>
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 dark:text-green-400 hover:underline text-xs break-all"
+                    >
+                      {article.url}
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
