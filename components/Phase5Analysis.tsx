@@ -80,19 +80,6 @@ export const Phase5Analysis: React.FC<Props> = ({
     localStorage.setItem('resea-favorites', JSON.stringify([...favorites]));
   }, [favorites]);
 
-  if (!knowledgeGraph) {
-    return (
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center py-12">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
-            Analisando {articles.length} artigos e gerando insights...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // Sorting and filtering logic
   const sortedAndFilteredArticles = useMemo(() => {
     let result = [...articles];
@@ -204,6 +191,20 @@ export const Phase5Analysis: React.FC<Props> = ({
   const p1Count = articles.filter(a => a.score.priority === 'P1').length;
   const p2Count = articles.filter(a => a.score.priority === 'P2').length;
   const p3Count = articles.filter(a => a.score.priority === 'P3').length;
+
+  // Show loading state if no knowledge graph yet
+  if (!knowledgeGraph) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 text-center py-12">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">
+            Analisando {articles.length} artigos e gerando insights...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-6">
