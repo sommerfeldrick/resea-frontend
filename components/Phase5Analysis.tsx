@@ -80,48 +80,6 @@ export const Phase5Analysis: React.FC<Props> = ({
     localStorage.setItem('resea-favorites', JSON.stringify([...favorites]));
   }, [favorites]);
 
-  // Toggle favorite
-  const toggleFavorite = (id: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(id)) {
-      newFavorites.delete(id);
-    } else {
-      newFavorites.add(id);
-    }
-    setFavorites(newFavorites);
-  };
-
-  // Toggle selection
-  const toggleSelection = (id: string) => {
-    const newSelection = new Set(selectedIds);
-    if (newSelection.has(id)) {
-      newSelection.delete(id);
-    } else {
-      newSelection.add(id);
-    }
-    setSelectedIds(newSelection);
-  };
-
-  // Select all visible articles
-  const selectAllVisible = () => {
-    const visibleIds = paginatedArticles.map(a => a.id);
-    setSelectedIds(new Set([...selectedIds, ...visibleIds]));
-  };
-
-  // Remove selected articles
-  const handleRemoveSelected = () => {
-    if (confirm(`Remover ${selectedIds.size} artigos selecionados?`)) {
-      // Remove from favorites too
-      const newFavorites = new Set(favorites);
-      selectedIds.forEach(id => newFavorites.delete(id));
-      setFavorites(newFavorites);
-
-      // Clear selection
-      setSelectedIds(new Set());
-      onSuccess(`${selectedIds.size} artigos removidos`);
-    }
-  };
-
   if (!knowledgeGraph) {
     return (
       <div className="max-w-4xl mx-auto p-8">
@@ -187,6 +145,48 @@ export const Phase5Analysis: React.FC<Props> = ({
   const recentArticles = useMemo(() => {
     return [...articles].filter(a => a.year >= 2023).slice(0, 3);
   }, [articles]);
+
+  // Toggle favorite
+  const toggleFavorite = (id: string) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(id)) {
+      newFavorites.delete(id);
+    } else {
+      newFavorites.add(id);
+    }
+    setFavorites(newFavorites);
+  };
+
+  // Toggle selection
+  const toggleSelection = (id: string) => {
+    const newSelection = new Set(selectedIds);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedIds(newSelection);
+  };
+
+  // Select all visible articles
+  const selectAllVisible = () => {
+    const visibleIds = paginatedArticles.map(a => a.id);
+    setSelectedIds(new Set([...selectedIds, ...visibleIds]));
+  };
+
+  // Remove selected articles
+  const handleRemoveSelected = () => {
+    if (confirm(`Remover ${selectedIds.size} artigos selecionados?`)) {
+      // Remove from favorites too
+      const newFavorites = new Set(favorites);
+      selectedIds.forEach(id => newFavorites.delete(id));
+      setFavorites(newFavorites);
+
+      // Clear selection
+      setSelectedIds(new Set());
+      onSuccess(`${selectedIds.size} artigos removidos`);
+    }
+  };
 
   // Calculate statistics
   const totalCitations = articles.reduce((sum, a) => sum + (a.citationCount || 0), 0);
