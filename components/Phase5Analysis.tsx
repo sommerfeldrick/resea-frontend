@@ -61,10 +61,10 @@ export const Phase5Analysis: React.FC<Props> = ({
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [citationDropdownOpen, setCitationDropdownOpen] = useState<string | null>(null);
+  const [expandedSimilar, setExpandedSimilar] = useState<string | null>(null);
+  const [similarArticles, setSimilarArticles] = useState<Record<string, Article[]>>({});
   const [sortBy, setSortBy] = useState<'score' | 'citations' | 'year' | 'title'>('score');
-  const [filterP1Only, setFilterP1Only] = useState(false);
-  const [filterFulltextOnly, setFilterFulltextOnly] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(20);
   const articlesPerPage = 20;
 
   // Load favorites from localStorage
@@ -80,17 +80,49 @@ export const Phase5Analysis: React.FC<Props> = ({
     localStorage.setItem('resea-favorites', JSON.stringify([...favorites]));
   }, [favorites]);
 
-  // Sorting and filtering logic
+  // Calculate accessible articles first (will be used in multiple places)
+  const accessibleArticles = useMemo(() => {
+    return articles.filter(a => a.doi || a.pdfUrl);
+  }, [articles]);
+
+  // Investigate P1 false positives - log articles with inconsistent data
+  useEffect(() => {
+    const suspicious = articles.filter(a => {
+      // Articles claiming to have fulltext but no way to access it
+      const claimsFulltext = a.hasFulltext;
+      const hasAccess = a.doi || a.pdfUrl;
+      return claimsFulltext && !hasAccess;
+    });
+
+    if (suspicious.length > 0) {
+      console.warn('⚠️ INVESTIGAÇÃO P1: Artigos com dados inconsistentes encontrados:', suspicious.length);
+      console.warn('Estes artigos alegam ter texto completo (hasFulltext=true) mas não têm DOI nem PDF:');
+      suspicious.forEach((article, idx) => {
+        console.warn(`${idx + 1}. [${article.score.priority}] ${article.title}`);
+        console.warn(`   - hasFulltext: ${article.hasFulltext}`);
+        console.warn(`   - doi: ${article.doi || 'AUSENTE'}`);
+        console.warn(`   - pdfUrl: ${article.pdfUrl || 'AUSENTE'}`);
+        console.warn(`   - source: ${article.source}`);
+      });
+      console.warn('💡 Estes artigos foram FILTRADOS e não serão exibidos ao usuário.');
+    }
+
+    // Count how many articles were filtered out
+    const totalArticles = articles.length;
+    const accessibleCount = accessibleArticles.length;
+    const filteredOut = totalArticles - accessibleCount;
+
+    if (filteredOut > 0) {
+      console.info(`📊 Estatísticas de Filtragem:`);
+      console.info(`   - Total de artigos: ${totalArticles}`);
+      console.info(`   - Artigos acessíveis (DOI ou PDF): ${accessibleCount}`);
+      console.info(`   - Artigos filtrados: ${filteredOut} (${Math.round((filteredOut/totalArticles)*100)}%)`);
+    }
+  }, [articles, accessibleArticles]);
+
+  // Sorting logic (filtering is done at backend level now)
   const sortedAndFilteredArticles = useMemo(() => {
     let result = [...articles];
-
-    // Apply filters
-    if (filterP1Only) {
-      result = result.filter(a => a.score.priority === 'P1');
-    }
-    if (filterFulltextOnly) {
-      result = result.filter(a => a.hasFulltext);
-    }
 
     // Apply sorting
     result.sort((a, b) => {
@@ -109,29 +141,28 @@ export const Phase5Analysis: React.FC<Props> = ({
     });
 
     return result;
-  }, [articles, sortBy, filterP1Only, filterFulltextOnly]);
+  }, [articles, sortBy]);
 
-  // Pagination
-  const paginatedArticles = useMemo(() => {
-    const startIndex = (currentPage - 1) * articlesPerPage;
-    return sortedAndFilteredArticles.slice(startIndex, startIndex + articlesPerPage);
-  }, [sortedAndFilteredArticles, currentPage]);
+  // "Ver mais" logic - show only visibleCount articles
+  const visibleArticles = useMemo(() => {
+    return sortedAndFilteredArticles.slice(0, visibleCount);
+  }, [sortedAndFilteredArticles, visibleCount]);
 
-  const totalPages = Math.ceil(sortedAndFilteredArticles.length / articlesPerPage);
+  const hasMore = visibleCount < sortedAndFilteredArticles.length;
 
   // Get favorite articles
   const favoriteArticles = useMemo(() => {
     return articles.filter(a => favorites.has(a.id)).sort((a, b) => b.score.score - a.score.score);
   }, [articles, favorites]);
 
-  // Top articles for insights section
+  // Top articles for insights section (only accessible ones)
   const topArticles = useMemo(() => {
-    return [...articles].sort((a, b) => b.score.score - a.score.score).slice(0, 10);
-  }, [articles]);
+    return [...accessibleArticles].sort((a, b) => b.score.score - a.score.score).slice(0, 10);
+  }, [accessibleArticles]);
 
   const recentArticles = useMemo(() => {
-    return [...articles].filter(a => a.year >= 2023).slice(0, 3);
-  }, [articles]);
+    return [...accessibleArticles].filter(a => a.year >= 2023).slice(0, 3);
+  }, [accessibleArticles]);
 
   // Toggle favorite
   const toggleFavorite = (id: string) => {
@@ -157,7 +188,7 @@ export const Phase5Analysis: React.FC<Props> = ({
 
   // Select all visible articles
   const selectAllVisible = () => {
-    const visibleIds = paginatedArticles.map(a => a.id);
+    const visibleIds = visibleArticles.map(a => a.id);
     setSelectedIds(new Set([...selectedIds, ...visibleIds]));
   };
 
@@ -181,16 +212,74 @@ export const Phase5Analysis: React.FC<Props> = ({
     onSuccess(`Citação ${format} copiada!`);
   };
 
-  // Calculate statistics
-  const totalCitations = articles.reduce((sum, a) => sum + (a.citationCount || 0), 0);
-  const avgCitations = Math.round(totalCitations / articles.length);
-  const withFulltext = articles.filter(a => a.hasFulltext).length;
-  const fulltextPercent = Math.round((withFulltext / articles.length) * 100);
+  // Find similar articles based on title and abstract similarity
+  const findSimilarArticles = (targetArticle: Article): Article[] => {
+    // Extract meaningful words from title and abstract
+    const extractWords = (text: string): Set<string> => {
+      const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those']);
+      const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
+      return new Set(words.filter(w => !commonWords.has(w)));
+    };
 
-  // Group by priority
-  const p1Count = articles.filter(a => a.score.priority === 'P1').length;
-  const p2Count = articles.filter(a => a.score.priority === 'P2').length;
-  const p3Count = articles.filter(a => a.score.priority === 'P3').length;
+    const targetWords = extractWords(targetArticle.title + ' ' + targetArticle.abstract);
+
+    // Calculate similarity score for each article
+    const similarities = articles
+      .filter(a => a.id !== targetArticle.id) // Exclude the target article itself
+      .filter(a => a.doi || a.pdfUrl) // Only show accessible articles
+      .map(article => {
+        const articleWords = extractWords(article.title + ' ' + article.abstract);
+
+        // Calculate Jaccard similarity (intersection over union)
+        const intersection = new Set([...targetWords].filter(w => articleWords.has(w)));
+        const union = new Set([...targetWords, ...articleWords]);
+        const similarity = union.size > 0 ? intersection.size / union.size : 0;
+
+        return { article, similarity };
+      })
+      .filter(item => item.similarity > 0.1) // Only articles with some similarity
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 5); // Top 5 most similar
+
+    return similarities.map(item => item.article);
+  };
+
+  // Handle searching for similar articles
+  const handleSearchSimilar = (articleId: string) => {
+    if (expandedSimilar === articleId) {
+      // If already expanded, collapse it
+      setExpandedSimilar(null);
+      return;
+    }
+
+    const article = articles.find(a => a.id === articleId);
+    if (!article) return;
+
+    // Check if we already calculated similar articles for this one
+    if (!similarArticles[articleId]) {
+      const similar = findSimilarArticles(article);
+      setSimilarArticles(prev => ({ ...prev, [articleId]: similar }));
+
+      if (similar.length === 0) {
+        onSuccess('Nenhum artigo similar encontrado com critérios suficientes.');
+      } else {
+        onSuccess(`${similar.length} artigos similares encontrados!`);
+      }
+    }
+
+    setExpandedSimilar(articleId);
+  };
+
+  // Calculate statistics (only for accessible articles)
+  const totalCitations = accessibleArticles.reduce((sum, a) => sum + (a.citationCount || 0), 0);
+  const avgCitations = accessibleArticles.length > 0 ? Math.round(totalCitations / accessibleArticles.length) : 0;
+  const withFulltext = accessibleArticles.filter(a => a.hasFulltext).length;
+  const fulltextPercent = accessibleArticles.length > 0 ? Math.round((withFulltext / accessibleArticles.length) * 100) : 0;
+
+  // Group by priority (only accessible articles)
+  const p1Count = accessibleArticles.filter(a => a.score.priority === 'P1').length;
+  const p2Count = accessibleArticles.filter(a => a.score.priority === 'P2').length;
+  const p3Count = accessibleArticles.filter(a => a.score.priority === 'P3').length;
 
   // Show loading state if no knowledge graph yet
   if (!knowledgeGraph) {
@@ -211,7 +300,12 @@ export const Phase5Analysis: React.FC<Props> = ({
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
         <h2 className="text-3xl font-bold mb-2">✨ Análise Inteligente Concluída</h2>
-        <p className="text-indigo-100">{articles.length} artigos selecionados e prontos para uso</p>
+        <p className="text-indigo-100">{accessibleArticles.length} artigos acessíveis e prontos para uso</p>
+        {articles.length > accessibleArticles.length && (
+          <p className="text-indigo-200 text-sm mt-1">
+            ({articles.length - accessibleArticles.length} artigos sem acesso foram filtrados)
+          </p>
+        )}
       </div>
 
       {/* 5. RESUMO EXECUTIVO */}
@@ -222,8 +316,8 @@ export const Phase5Analysis: React.FC<Props> = ({
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{articles.length}</div>
-            <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">Artigos encontrados</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{accessibleArticles.length}</div>
+            <div className="text-sm text-gray-700 dark:text-gray-300 mt-1">Artigos acessíveis</div>
           </div>
           <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800">
             <div className="text-3xl font-bold text-green-600 dark:text-green-400">{fulltextPercent}%</div>
@@ -318,37 +412,16 @@ export const Phase5Analysis: React.FC<Props> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filterP1Only}
-                onChange={(e) => setFilterP1Only(e.target.checked)}
-                className="rounded"
-              />
-              Apenas P1
-            </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filterFulltextOnly}
-                onChange={(e) => setFilterFulltextOnly(e.target.checked)}
-                className="rounded"
-              />
-              Apenas com texto completo
-            </label>
-          </div>
-
           <button
             onClick={selectAllVisible}
             className="ml-auto text-sm px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
           >
-            Selecionar todos ({paginatedArticles.length})
+            Selecionar todos visíveis ({visibleArticles.length})
           </button>
         </div>
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          Mostrando {sortedAndFilteredArticles.length} artigos • Página {currentPage} de {totalPages}
+          Mostrando {visibleArticles.length} de {sortedAndFilteredArticles.length} artigos
         </div>
       </div>
 
@@ -359,10 +432,11 @@ export const Phase5Analysis: React.FC<Props> = ({
           Todos os Artigos Encontrados
         </h3>
         <div className="space-y-4">
-          {paginatedArticles.map((article, idx) => {
+          {visibleArticles.map((article, idx) => {
             const isFavorite = favorites.has(article.id);
             const isSelected = selectedIds.has(article.id);
             const isCitationOpen = citationDropdownOpen === article.id;
+            const roundedScore = Math.round(article.score.score);
 
             return (
               <div key={article.id}>
@@ -392,7 +466,7 @@ export const Phase5Analysis: React.FC<Props> = ({
                               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
                               : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
                           }`}>
-                            Score {article.score.score}
+                            Score {roundedScore}
                           </span>
                           <button
                             onClick={() => toggleFavorite(article.id)}
@@ -502,34 +576,108 @@ export const Phase5Analysis: React.FC<Props> = ({
                             </div>
                           )}
                         </div>
+
+                        {/* Search Similar Articles Button */}
+                        <button
+                          onClick={() => handleSearchSimilar(article.id)}
+                          className={`text-xs px-3 py-1 rounded transition-colors ${
+                            expandedSimilar === article.id
+                              ? 'bg-purple-700 text-white'
+                              : 'bg-purple-600 text-white hover:bg-purple-700'
+                          }`}
+                        >
+                          🔍 {expandedSimilar === article.id ? 'Ocultar' : 'Buscar'} Similares
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Similar Articles Expansion */}
+                {expandedSimilar === article.id && similarArticles[article.id] && (
+                  <div className="mt-2 p-4 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-300 dark:border-purple-700 rounded-lg">
+                    <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-3 flex items-center gap-2">
+                      <span>🔍</span>
+                      Artigos Similares Encontrados ({similarArticles[article.id].length})
+                    </h4>
+                    {similarArticles[article.id].length === 0 ? (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Nenhum artigo similar encontrado com critérios suficientes.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {similarArticles[article.id].map((similarArticle) => (
+                          <div
+                            key={similarArticle.id}
+                            className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-800"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <h5 className="font-medium text-gray-900 dark:text-white text-sm flex-1 pr-2">
+                                {similarArticle.title}
+                              </h5>
+                              <span className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap ${
+                                similarArticle.score.priority === 'P1'
+                                  ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                                  : similarArticle.score.priority === 'P2'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                              }`}>
+                                {similarArticle.score.priority}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                              {similarArticle.authors.slice(0, 2).join(', ')}{similarArticle.authors.length > 2 ? ' et al.' : ''} • {similarArticle.year}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setSelectedArticleForDetails(similarArticle)}
+                                className="text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                              >
+                                📖 Ver Detalhes
+                              </button>
+                              {similarArticle.doi && (
+                                <a
+                                  href={`https://doi.org/${similarArticle.doi}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                >
+                                  🔗 DOI
+                                </a>
+                              )}
+                              {similarArticle.pdfUrl && (
+                                <a
+                                  href={similarArticle.pdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                >
+                                  📄 PDF
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-2">
+        {/* Ver Mais Button */}
+        {hasMore && (
+          <div className="mt-6 flex items-center justify-center">
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-600"
+              onClick={() => setVisibleCount(prev => prev + articlesPerPage)}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
             >
-              ← Anterior
-            </button>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Página {currentPage} de {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              Próxima →
+              Ver Mais Artigos
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
           </div>
         )}

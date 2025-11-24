@@ -54,6 +54,9 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
 
   const keywords = extractKeywords((article.title + ' ' + article.abstract).substring(0, 1000));
 
+  // Round score to integer
+  const roundedScore = Math.round(article.score.score);
+
   // Detect methodology from abstract
   const detectMethodology = (abstract: string): string => {
     const lower = abstract.toLowerCase();
@@ -108,7 +111,7 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {article.score.score}
+                  {roundedScore}
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Score</div>
               </div>
