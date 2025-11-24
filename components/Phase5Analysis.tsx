@@ -205,11 +205,6 @@ export const Phase5Analysis: React.FC<Props> = ({
   const p2Count = articles.filter(a => a.score.priority === 'P2').length;
   const p3Count = articles.filter(a => a.score.priority === 'P3').length;
 
-  const copyToClipboard = (text: string, format: string) => {
-    navigator.clipboard.writeText(text);
-    onSuccess(`Citação ${format} copiada!`);
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-6">
       {/* Header */}
