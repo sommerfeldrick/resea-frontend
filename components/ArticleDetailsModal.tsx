@@ -74,6 +74,63 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
 
   const methodology = detectMethodology(article.abstract);
 
+  // Extract structured information from abstract
+  const extractStructuredInfo = (abstract: string) => {
+    if (!abstract || abstract.trim().length === 0) {
+      return { objective: null, results: null, conclusion: null };
+    }
+
+    const sentences = abstract.split(/\.\s+/);
+    let objective = null;
+    let results = null;
+    let conclusion = null;
+
+    // Heuristics to find objective (usually in first 2 sentences)
+    const objectiveKeywords = ['objective', 'aim', 'purpose', 'goal', 'study', 'investigate', 'examine', 'evaluate', 'assess', 'analyze'];
+    for (let i = 0; i < Math.min(3, sentences.length); i++) {
+      const lower = sentences[i].toLowerCase();
+      if (objectiveKeywords.some(kw => lower.includes(kw))) {
+        objective = sentences[i].trim() + '.';
+        break;
+      }
+    }
+
+    // Find results (look for keywords in middle section)
+    const resultsKeywords = ['result', 'found', 'showed', 'demonstrated', 'revealed', 'indicated', 'observed', 'significant', 'increase', 'decrease', 'improve'];
+    const middleStart = Math.floor(sentences.length * 0.3);
+    const middleEnd = Math.floor(sentences.length * 0.7);
+    for (let i = middleStart; i < middleEnd; i++) {
+      const lower = sentences[i].toLowerCase();
+      if (resultsKeywords.some(kw => lower.includes(kw))) {
+        // Get 1-2 sentences for results
+        results = sentences.slice(i, Math.min(i + 2, sentences.length)).join('. ').trim() + '.';
+        break;
+      }
+    }
+
+    // Find conclusion (usually in last 2 sentences)
+    const conclusionKeywords = ['conclusion', 'conclude', 'suggest', 'indicate', 'demonstrate', 'show', 'findings', 'study', 'evidence'];
+    for (let i = Math.max(0, sentences.length - 3); i < sentences.length; i++) {
+      const lower = sentences[i].toLowerCase();
+      if (conclusionKeywords.some(kw => lower.includes(kw))) {
+        conclusion = sentences.slice(i).join('. ').trim() + '.';
+        break;
+      }
+    }
+
+    // Fallback: use first sentence as objective, last as conclusion
+    if (!objective && sentences.length > 0) {
+      objective = sentences[0].trim() + '.';
+    }
+    if (!conclusion && sentences.length > 0) {
+      conclusion = sentences[sentences.length - 1].trim() + '.';
+    }
+
+    return { objective, results, conclusion };
+  };
+
+  const structuredInfo = extractStructuredInfo(article.abstract);
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" onClick={onClose}>
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -145,9 +202,14 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
               </h3>
               <div className="space-y-2 text-sm">
                 {article.journalInfo && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Journal:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{article.journalInfo}</span>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <span className="text-blue-900 dark:text-blue-300 font-semibold text-xs uppercase tracking-wide">Publicado em</span>
+                    </div>
+                    <span className="font-bold text-base text-gray-900 dark:text-white">{article.journalInfo}</span>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-2">
@@ -239,7 +301,52 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
               </div>
             )}
 
-            {/* Abstract */}
+            {/* Structured Study Information */}
+            {(structuredInfo.objective || structuredInfo.results || structuredInfo.conclusion) && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-lg">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                  Estrutura do Estudo
+                </h3>
+
+                {structuredInfo.objective && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
+                      <span>🎯</span> Objetivo
+                    </h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {structuredInfo.objective}
+                    </p>
+                  </div>
+                )}
+
+                {structuredInfo.results && (
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">
+                    <h4 className="font-semibold text-green-900 dark:text-green-300 mb-2 flex items-center gap-2">
+                      <span>📊</span> Resultados Principais
+                    </h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {structuredInfo.results}
+                    </p>
+                  </div>
+                )}
+
+                {structuredInfo.conclusion && (
+                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-l-4 border-purple-500">
+                    <h4 className="font-semibold text-purple-900 dark:text-purple-300 mb-2 flex items-center gap-2">
+                      <span>💡</span> Conclusão
+                    </h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {structuredInfo.conclusion}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Abstract Completo */}
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

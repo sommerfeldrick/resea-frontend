@@ -7,6 +7,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { formatABNT, formatAPA, formatVancouver } from '../utils/citations';
 import { ArticleDetailsModal } from './ArticleDetailsModal';
 import { BulkActionsBar } from './BulkActionsBar';
+import { API_BASE_URL } from '../config';
+import { authService } from '../services/authService';
 
 interface Article {
   id: string;
@@ -63,6 +65,7 @@ export const Phase5Analysis: React.FC<Props> = ({
   const [citationDropdownOpen, setCitationDropdownOpen] = useState<string | null>(null);
   const [expandedSimilar, setExpandedSimilar] = useState<string | null>(null);
   const [similarArticles, setSimilarArticles] = useState<Record<string, Article[]>>({});
+  const [loadingSimilar, setLoadingSimilar] = useState<string | null>(null); // ID do artigo sendo buscado
   const [sortBy, setSortBy] = useState<'score' | 'citations' | 'year' | 'title'>('score');
   const [visibleCount, setVisibleCount] = useState(20);
   const articlesPerPage = 20;
@@ -212,40 +215,17 @@ export const Phase5Analysis: React.FC<Props> = ({
     onSuccess(`Citação ${format} copiada!`);
   };
 
-  // Find similar articles based on title and abstract similarity
-  const findSimilarArticles = (targetArticle: Article): Article[] => {
-    // Extract meaningful words from title and abstract
-    const extractWords = (text: string): Set<string> => {
-      const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that', 'these', 'those']);
-      const words = text.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
-      return new Set(words.filter(w => !commonWords.has(w)));
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = authService.getToken();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
     };
-
-    const targetWords = extractWords(targetArticle.title + ' ' + targetArticle.abstract);
-
-    // Calculate similarity score for each article
-    const similarities = articles
-      .filter(a => a.id !== targetArticle.id) // Exclude the target article itself
-      .filter(a => a.doi || a.pdfUrl) // Only show accessible articles
-      .map(article => {
-        const articleWords = extractWords(article.title + ' ' + article.abstract);
-
-        // Calculate Jaccard similarity (intersection over union)
-        const intersection = new Set([...targetWords].filter(w => articleWords.has(w)));
-        const union = new Set([...targetWords, ...articleWords]);
-        const similarity = union.size > 0 ? intersection.size / union.size : 0;
-
-        return { article, similarity };
-      })
-      .filter(item => item.similarity > 0.1) // Only articles with some similarity
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 5); // Top 5 most similar
-
-    return similarities.map(item => item.article);
   };
 
-  // Handle searching for similar articles
-  const handleSearchSimilar = (articleId: string) => {
+  // Handle searching for similar articles (from the internet, not current list)
+  const handleSearchSimilar = async (articleId: string) => {
     if (expandedSimilar === articleId) {
       // If already expanded, collapse it
       setExpandedSimilar(null);
@@ -255,15 +235,40 @@ export const Phase5Analysis: React.FC<Props> = ({
     const article = articles.find(a => a.id === articleId);
     if (!article) return;
 
-    // Check if we already calculated similar articles for this one
+    // Check if we already fetched similar articles for this one
     if (!similarArticles[articleId]) {
-      const similar = findSimilarArticles(article);
-      setSimilarArticles(prev => ({ ...prev, [articleId]: similar }));
+      try {
+        setLoadingSimilar(articleId);
+        onSuccess('Buscando novos artigos similares na internet...');
 
-      if (similar.length === 0) {
-        onSuccess('Nenhum artigo similar encontrado com critérios suficientes.');
-      } else {
-        onSuccess(`${similar.length} artigos similares encontrados!`);
+        const response = await fetch(`${API_BASE_URL}/api/research-flow/analysis/find-similar`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            referenceArticle: article,
+            existingArticles: articles,
+            originalQuery: knowledgeGraph?.insights?.gaps?.[0] || article.title // Usar query original se disponível
+          })
+        });
+
+        if (!response.ok) throw new Error('Falha ao buscar artigos similares');
+
+        const data = await response.json();
+        const newSimilarArticles = data.data || [];
+
+        setSimilarArticles(prev => ({ ...prev, [articleId]: newSimilarArticles }));
+
+        if (newSimilarArticles.length === 0) {
+          onSuccess('Nenhum novo artigo similar encontrado na internet.');
+        } else {
+          onSuccess(`${newSimilarArticles.length} novos artigos encontrados!`);
+        }
+      } catch (error: any) {
+        console.error('Error finding similar articles:', error);
+        onSuccess('Erro ao buscar artigos similares. Tente novamente.');
+        return;
+      } finally {
+        setLoadingSimilar(null);
       }
     }
 
@@ -580,13 +585,26 @@ export const Phase5Analysis: React.FC<Props> = ({
                         {/* Search Similar Articles Button */}
                         <button
                           onClick={() => handleSearchSimilar(article.id)}
-                          className={`text-xs px-3 py-1 rounded transition-colors ${
-                            expandedSimilar === article.id
+                          disabled={loadingSimilar === article.id}
+                          className={`text-xs px-3 py-1 rounded transition-colors flex items-center gap-1 ${
+                            loadingSimilar === article.id
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : expandedSimilar === article.id
                               ? 'bg-purple-700 text-white'
                               : 'bg-purple-600 text-white hover:bg-purple-700'
                           }`}
                         >
-                          🔍 {expandedSimilar === article.id ? 'Ocultar' : 'Buscar'} Similares
+                          {loadingSimilar === article.id ? (
+                            <>
+                              <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Buscando...
+                            </>
+                          ) : (
+                            <>🔍 {expandedSimilar === article.id ? 'Ocultar' : 'Buscar'} Similares</>
+                          )}
                         </button>
                       </div>
                     </div>
