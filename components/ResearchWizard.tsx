@@ -602,55 +602,31 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
               if (data.type === 'progress') {
                 pendingProgress = data.data;
 
-                // 🎨 REAL-TIME VISUALIZATION: Process new articles from progress events
+                // 🎨 REAL-TIME VISUALIZATION: Log progress but DON'T accumulate articles
+                // (articles will come via articles_batch events to avoid duplication)
                 if (data.data.newArticles && data.data.newArticles.length > 0) {
-                  console.log(`📊 Received ${data.data.newArticles.length} new articles via SSE`);
-
-                  // Add new articles to accumulated list
-                  const newArticlesFromProgress = data.data.newArticles.map((a: any) => ({
-                    id: a.id,
-                    title: a.title,
-                    authors: [],
-                    year: a.year || 0,
-                    abstract: '',
-                    source: a.source,
-                    url: '',
-                    citationCount: a.citationCount || 0,
-                    score: {
-                      score: a.score,
-                      priority: a.priority,
-                      reasons: []
-                    },
-                    format: 'pdf',
-                    hasFulltext: a.hasFulltext
-                  }));
-
-                  accumulatedArticles = [...accumulatedArticles, ...newArticlesFromProgress];
-                  pendingArticles = accumulatedArticles;
-                  console.log(`📚 Total accumulated articles: ${accumulatedArticles.length}`);
+                  console.log(`📊 Progress: ${data.data.newArticles.length} new articles found (will arrive in batch)`);
                 }
 
                 const now = Date.now();
                 if (now - lastProgressUpdate > UPDATE_INTERVAL) {
-                  // Update UI immediately for real-time visualization
+                  // Update progress metadata only (articles come from articles_batch)
                   const progressToUpdate = pendingProgress;
-                  const articlesToUpdate = pendingArticles;
-                  console.log(`🔄 Updating UI with ${articlesToUpdate.length} articles`);
+                  console.log(`🔄 Updating progress: ${progressToUpdate?.articlesFound || 0} articles found`);
 
-                  // Direct updates (no startTransition) for immediate rendering
+                  // Update only progress metadata
                   setSearchProgress(progressToUpdate);
-                  if (articlesToUpdate.length > 0) {
-                    setArticles(articlesToUpdate);
-                  }
 
                   lastProgressUpdate = now;
-                  lastArticlesUpdate = now;
                   pendingProgress = null;
                 }
               } else if (data.type === 'articles_batch') {
-                // Acumular artigos dos lotes
+                // Acumular artigos dos lotes (SOURCE OF TRUTH para artigos)
+                console.log(`📦 Received batch ${data.batchIndex + 1}/${data.totalBatches}: ${data.data.length} articles`);
                 accumulatedArticles = [...accumulatedArticles, ...data.data];
                 pendingArticles = accumulatedArticles;
+                console.log(`📚 Total accumulated: ${accumulatedArticles.length}/${data.totalArticles} articles`);
+
                 const now = Date.now();
                 if (now - lastArticlesUpdate > UPDATE_INTERVAL) {
                   const articlesToUpdate = pendingArticles;
