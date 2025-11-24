@@ -188,6 +188,12 @@ export const Phase5Analysis: React.FC<Props> = ({
     }
   };
 
+  // Copy to clipboard helper
+  const copyToClipboard = (text: string, format: string) => {
+    navigator.clipboard.writeText(text);
+    onSuccess(`Citação ${format} copiada!`);
+  };
+
   // Calculate statistics
   const totalCitations = articles.reduce((sum, a) => sum + (a.citationCount || 0), 0);
   const avgCitations = Math.round(totalCitations / articles.length);
