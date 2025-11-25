@@ -52,12 +52,31 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
       .map(([word]) => word);
   };
 
-  const keywords = extractKeywords((article.title + ' ' + article.abstract).substring(0, 1000));
+  // Determine best available source for extraction
+  const getSourceInfo = (): { text: string; source: 'sections' | 'fulltext' | 'abstract' } => {
+    // Priority 1: GROBID sections (structured)
+    if (article.sections && Object.keys(article.sections).length > 0) {
+      // Concatenate all sections for keyword and study type detection
+      const sectionsText = Object.values(article.sections).join(' ');
+      return { text: sectionsText, source: 'sections' };
+    }
+    // Priority 2: Full-text content
+    if (article.fullContent && article.fullContent.length > 100) {
+      return { text: article.fullContent, source: 'fulltext' };
+    }
+    // Priority 3: Abstract (fallback)
+    return { text: article.abstract || '', source: 'abstract' };
+  };
+
+  const sourceInfo = getSourceInfo();
+  const sourceText = sourceInfo.text;
+
+  const keywords = extractKeywords((article.title + ' ' + sourceText).substring(0, 1000));
 
   // Round score to integer
   const roundedScore = Math.round(article.score.score);
 
-  // Detect study type from abstract and title
+  // Detect study type from source text and title
   const detectStudyType = (text: string): string | null => {
     const lower = text.toLowerCase();
 
@@ -107,12 +126,26 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
     return null;
   };
 
-  const studyType = detectStudyType(article.title + ' ' + article.abstract);
+  const studyType = detectStudyType(article.title + ' ' + sourceText);
 
-  // Extract structured information from abstract (improved algorithm)
-  const extractStructuredInfo = (abstract: string) => {
-    if (!abstract || abstract.trim().length === 0) {
-      return { objective: null, results: null, conclusion: null, methodology: null };
+  // Extract structured information from source (GROBID sections, fulltext, or abstract)
+  const extractStructuredInfo = () => {
+    // Priority 1: Use GROBID sections directly if available
+    if (article.sections && Object.keys(article.sections).length > 0) {
+      const sections = article.sections;
+      return {
+        objective: sections.introduction?.substring(0, 500) || null,
+        methodology: sections.methodology || sections.methods || null,
+        results: sections.results?.substring(0, 500) || null,
+        conclusion: sections.conclusion || sections.discussion?.substring(0, 500) || null,
+        source: 'sections' as const
+      };
+    }
+
+    // Priority 2 & 3: Extract from full-text or abstract
+    const textToExtract = sourceInfo.source === 'fulltext' ? article.fullContent! : article.abstract;
+    if (!textToExtract || textToExtract.trim().length === 0) {
+      return { objective: null, results: null, conclusion: null, methodology: null, source: sourceInfo.source };
     }
 
     let objective = null;
@@ -122,7 +155,7 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
 
     const usedIndices = new Set<number>(); // Track which sentences we've used
 
-    // Step 1: Try structured abstract with explicit labels
+    // Step 1: Try structured text with explicit labels
     const structuredPatterns = {
       objective: /(?:OBJECTIVE|OBJECTIVES|AIM|AIMS|PURPOSE|GOAL|OBJETIVO|OBJETIVOS)[:\s]+([^.]+(?:\.[^.]+){0,2})/i,
       methodology: /(?:METHODS?|METHODOLOGY|DESIGN|MATERIALS?\s+AND\s+METHODS?|MÉTODOS?|METODOLOGIA)[:\s]+([^.]+(?:\.[^.]+){0,2})/i,
@@ -130,36 +163,36 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
       conclusion: /(?:CONCLUSIONS?|IMPLICATIONS?|SUMMARY|CONCLUSÕES?|IMPLICAÇÕES?)[:\s]+([^.]+(?:\.[^.]+){0,2})/i
     };
 
-    const objMatch = abstract.match(structuredPatterns.objective);
+    const objMatch = textToExtract.match(structuredPatterns.objective);
     if (objMatch && objMatch[1].length > 20) {
       objective = objMatch[1].trim();
     }
 
-    const methMatch = abstract.match(structuredPatterns.methodology);
+    const methMatch = textToExtract.match(structuredPatterns.methodology);
     if (methMatch && methMatch[1].length > 20) {
       methodology = methMatch[1].trim();
     }
 
-    const resMatch = abstract.match(structuredPatterns.results);
+    const resMatch = textToExtract.match(structuredPatterns.results);
     if (resMatch && resMatch[1].length > 20) {
       results = resMatch[1].trim();
     }
 
-    const concMatch = abstract.match(structuredPatterns.conclusion);
+    const concMatch = textToExtract.match(structuredPatterns.conclusion);
     if (concMatch && concMatch[1].length > 20) {
       conclusion = concMatch[1].trim();
     }
 
     // If we found structured labels, return now
     if (objective || methodology || results || conclusion) {
-      return { objective, results, conclusion, methodology };
+      return { objective, results, conclusion, methodology, source: sourceInfo.source };
     }
 
     // Step 2: Fallback - sentence-based extraction with better validation
-    const sentences = abstract
+    const sentences = textToExtract
       .split(/[.!?]\s+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 20); // Filter out very short fragments
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 20); // Filter out very short fragments
 
     // Helper: Check if sentence is informative (not just "was categorized into 4 Groups")
     const isInformative = (sentence: string): boolean => {
@@ -260,10 +293,10 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
       objective = sentences[0];
     }
 
-    return { objective, results, conclusion, methodology };
+    return { objective, results, conclusion, methodology, source: sourceInfo.source };
   };
 
-  const structuredInfo = extractStructuredInfo(article.abstract);
+  const structuredInfo = extractStructuredInfo();
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" onClick={onClose}>
@@ -403,12 +436,28 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
             {/* Structured Study Information */}
             {(structuredInfo.objective || structuredInfo.methodology || structuredInfo.results || structuredInfo.conclusion) && (
               <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-lg">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                  </svg>
-                  Estrutura do Estudo
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-lg">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Estrutura do Estudo
+                  </h3>
+                  {/* Data Source Indicator */}
+                  {structuredInfo.source && (
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                      structuredInfo.source === 'sections'
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                        : structuredInfo.source === 'fulltext'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                    }`}>
+                      {structuredInfo.source === 'sections' && '✓ Texto Estruturado (GROBID)'}
+                      {structuredInfo.source === 'fulltext' && '📄 Texto Completo'}
+                      {structuredInfo.source === 'abstract' && '📝 Abstract'}
+                    </span>
+                  )}
+                </div>
 
                 {structuredInfo.objective && (
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
