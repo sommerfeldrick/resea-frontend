@@ -57,76 +57,158 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
   // Round score to integer
   const roundedScore = Math.round(article.score.score);
 
-  // Detect methodology from abstract
-  const detectMethodology = (abstract: string): string => {
-    const lower = abstract.toLowerCase();
-    if (lower.includes('systematic review') || lower.includes('meta-analysis')) return 'Revisão Sistemática';
-    if (lower.includes('randomized') || lower.includes('controlled trial')) return 'Ensaio Clínico';
-    if (lower.includes('survey') || lower.includes('questionnaire')) return 'Survey';
-    if (lower.includes('finite element') || lower.includes('simulation')) return 'Simulação/Modelagem';
-    if (lower.includes('in vitro')) return 'Estudo In Vitro';
-    if (lower.includes('in vivo')) return 'Estudo In Vivo';
-    if (lower.includes('retrospective')) return 'Estudo Retrospectivo';
-    if (lower.includes('prospective')) return 'Estudo Prospectivo';
-    if (lower.includes('case study')) return 'Estudo de Caso';
-    return 'Não especificada';
-  };
+  // Detect study type from abstract and title
+  const detectStudyType = (text: string): string | null => {
+    const lower = text.toLowerCase();
 
-  const methodology = detectMethodology(article.abstract);
-
-  // Extract structured information from abstract
-  const extractStructuredInfo = (abstract: string) => {
-    if (!abstract || abstract.trim().length === 0) {
-      return { objective: null, results: null, conclusion: null };
+    // Systematic reviews and meta-analyses
+    if (lower.match(/systematic\s+review|meta-analysis|revisão\s+sistemática|metanálise/)) {
+      return 'Revisão Sistemática / Meta-análise';
+    }
+    // Clinical trials
+    if (lower.match(/randomized.*trial|controlled.*trial|clinical.*trial|ensaio\s+clínico|estudo\s+controlado/)) {
+      return 'Ensaio Clínico Controlado';
+    }
+    // Cohort studies
+    if (lower.match(/cohort.*study|longitudinal.*study|estudo\s+de\s+coorte|estudo\s+longitudinal/)) {
+      return 'Estudo de Coorte';
+    }
+    // Case-control studies
+    if (lower.match(/case-control|caso-controle/)) {
+      return 'Estudo Caso-Controle';
+    }
+    // Cross-sectional studies
+    if (lower.match(/cross-sectional|transversal/)) {
+      return 'Estudo Transversal';
+    }
+    // In vitro / In vivo
+    if (lower.match(/in\s+vitro/) && lower.match(/in\s+vivo/)) {
+      return 'Estudo In Vitro e In Vivo';
+    }
+    if (lower.match(/in\s+vitro/)) {
+      return 'Estudo In Vitro';
+    }
+    if (lower.match(/in\s+vivo/)) {
+      return 'Estudo In Vivo';
+    }
+    // Computational/simulation studies
+    if (lower.match(/finite\s+element|simulation|computational|modelagem|simulação/)) {
+      return 'Estudo Computacional / Simulação';
+    }
+    // Review articles (not systematic)
+    if (lower.match(/^review|literature\s+review|revisão\s+da\s+literatura/) && !lower.match(/systematic/)) {
+      return 'Revisão de Literatura';
+    }
+    // Case reports/series
+    if (lower.match(/case\s+report|case\s+series|relato\s+de\s+caso|série\s+de\s+casos/)) {
+      return 'Relato de Caso';
     }
 
-    const sentences = abstract.split(/\.\s+/);
+    return null;
+  };
+
+  const studyType = detectStudyType(article.title + ' ' + article.abstract);
+
+  // Extract structured information from abstract (multilingual support)
+  const extractStructuredInfo = (abstract: string) => {
+    if (!abstract || abstract.trim().length === 0) {
+      return { objective: null, results: null, conclusion: null, methodology: null };
+    }
+
     let objective = null;
     let results = null;
     let conclusion = null;
+    let methodology = null;
 
-    // Heuristics to find objective (usually in first 2 sentences)
-    const objectiveKeywords = ['objective', 'aim', 'purpose', 'goal', 'study', 'investigate', 'examine', 'evaluate', 'assess', 'analyze'];
-    for (let i = 0; i < Math.min(3, sentences.length); i++) {
-      const lower = sentences[i].toLowerCase();
-      if (objectiveKeywords.some(kw => lower.includes(kw))) {
-        objective = sentences[i].trim() + '.';
-        break;
+    // Step 1: Check for structured abstract with labels
+    const structuredPatterns = {
+      objective: /(?:objective|aim|purpose|goal|objetivo|finalidade)[:\s]+(.*?)(?=(?:method|result|conclusion|metodologia|resultado|conclusão|$))/is,
+      methodology: /(?:method|methodology|design|procedur|metodologia|método|delineamento)[:\s]+(.*?)(?=(?:result|finding|conclusion|resultado|achado|conclusão|$))/is,
+      results: /(?:result|finding|outcome|resultado|achado|desfecho)[:\s]+(.*?)(?=(?:conclusion|discussion|implication|conclusão|discussão|implicação|$))/is,
+      conclusion: /(?:conclusion|implication|suggest|recommendation|conclusão|sugestão|recomendação)[:\s]+(.*?)$/is
+    };
+
+    // Try to extract using patterns
+    const objMatch = abstract.match(structuredPatterns.objective);
+    if (objMatch) objective = objMatch[1].trim().substring(0, 500);
+
+    const methMatch = abstract.match(structuredPatterns.methodology);
+    if (methMatch) methodology = methMatch[1].trim().substring(0, 500);
+
+    const resMatch = abstract.match(structuredPatterns.results);
+    if (resMatch) results = resMatch[1].trim().substring(0, 500);
+
+    const concMatch = abstract.match(structuredPatterns.conclusion);
+    if (concMatch) conclusion = concMatch[1].trim().substring(0, 500);
+
+    // Step 2: Fallback to keyword-based extraction if structured patterns failed
+    const sentences = abstract.split(/[.!?]\s+/).filter(s => s.trim().length > 10);
+
+    if (!objective) {
+      // Keywords in English and Portuguese
+      const objectiveKeywords = ['objective', 'aim', 'purpose', 'goal', 'investigate', 'examine', 'evaluate', 'assess', 'analyze',
+                                  'objetivo', 'finalidade', 'propósito', 'investigar', 'examinar', 'avaliar', 'analisar'];
+      for (let i = 0; i < Math.min(3, sentences.length); i++) {
+        const lower = sentences[i].toLowerCase();
+        if (objectiveKeywords.some(kw => lower.includes(kw))) {
+          objective = sentences[i].trim();
+          break;
+        }
       }
     }
 
-    // Find results (look for keywords in middle section)
-    const resultsKeywords = ['result', 'found', 'showed', 'demonstrated', 'revealed', 'indicated', 'observed', 'significant', 'increase', 'decrease', 'improve'];
-    const middleStart = Math.floor(sentences.length * 0.3);
-    const middleEnd = Math.floor(sentences.length * 0.7);
-    for (let i = middleStart; i < middleEnd; i++) {
-      const lower = sentences[i].toLowerCase();
-      if (resultsKeywords.some(kw => lower.includes(kw))) {
-        // Get 1-2 sentences for results
-        results = sentences.slice(i, Math.min(i + 2, sentences.length)).join('. ').trim() + '.';
-        break;
+    if (!methodology) {
+      const methodKeywords = ['method', 'methodology', 'design', 'procedure', 'conducted', 'performed', 'carried out',
+                             'metodologia', 'método', 'delineamento', 'procedimento', 'realizado', 'executado'];
+      const earlySection = sentences.slice(1, Math.min(sentences.length, 5));
+      for (const sentence of earlySection) {
+        const lower = sentence.toLowerCase();
+        if (methodKeywords.some(kw => lower.includes(kw))) {
+          methodology = sentence.trim();
+          break;
+        }
       }
     }
 
-    // Find conclusion (usually in last 2 sentences)
-    const conclusionKeywords = ['conclusion', 'conclude', 'suggest', 'indicate', 'demonstrate', 'show', 'findings', 'study', 'evidence'];
-    for (let i = Math.max(0, sentences.length - 3); i < sentences.length; i++) {
-      const lower = sentences[i].toLowerCase();
-      if (conclusionKeywords.some(kw => lower.includes(kw))) {
-        conclusion = sentences.slice(i).join('. ').trim() + '.';
-        break;
+    if (!results) {
+      const resultsKeywords = ['result', 'found', 'showed', 'demonstrated', 'revealed', 'indicated', 'observed',
+                              'significant', 'increase', 'decrease', 'improve', 'reduction',
+                              'resultado', 'encontrado', 'mostrou', 'demonstrou', 'revelou', 'indicou', 'observado',
+                              'significativo', 'aumento', 'redução', 'melhora'];
+      const middleStart = Math.floor(sentences.length * 0.3);
+      const middleEnd = Math.floor(sentences.length * 0.7);
+      for (let i = middleStart; i < middleEnd; i++) {
+        const lower = sentences[i].toLowerCase();
+        if (resultsKeywords.some(kw => lower.includes(kw))) {
+          results = sentences.slice(i, Math.min(i + 2, sentences.length)).join('. ').trim();
+          break;
+        }
       }
     }
 
-    // Fallback: use first sentence as objective, last as conclusion
+    if (!conclusion) {
+      const conclusionKeywords = ['conclusion', 'conclude', 'suggest', 'indicate', 'demonstrate', 'findings',
+                                 'evidence', 'implication', 'recommend',
+                                 'conclusão', 'concluir', 'sugerir', 'indicar', 'achados', 'evidência',
+                                 'implicação', 'recomendar'];
+      for (let i = Math.max(0, sentences.length - 3); i < sentences.length; i++) {
+        const lower = sentences[i].toLowerCase();
+        if (conclusionKeywords.some(kw => lower.includes(kw))) {
+          conclusion = sentences.slice(i).join('. ').trim();
+          break;
+        }
+      }
+    }
+
+    // Final fallbacks
     if (!objective && sentences.length > 0) {
-      objective = sentences[0].trim() + '.';
+      objective = sentences[0].trim();
     }
     if (!conclusion && sentences.length > 0) {
-      conclusion = sentences[sentences.length - 1].trim() + '.';
+      conclusion = sentences[sentences.length - 1].trim();
     }
 
-    return { objective, results, conclusion };
+    return { objective, results, conclusion, methodology };
   };
 
   const structuredInfo = extractStructuredInfo(article.abstract);
@@ -226,38 +308,23 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
                   <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Autores:</span>
                   <span className="font-medium text-gray-900 dark:text-white">{article.authors.join(', ')}</span>
                 </div>
-                {article.doi && (
-                  <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">DOI:</span>
-                    <a
-                      href={`https://doi.org/${article.doi}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono text-xs break-all"
-                    >
-                      {article.doi}
-                    </a>
-                  </div>
-                )}
-                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">Metodologia Detectada:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{methodology}</span>
-                </div>
-                {article.url && (
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <span className="text-gray-600 dark:text-gray-400 block text-xs mb-1">URL Original:</span>
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-green-600 dark:text-green-400 hover:underline text-xs break-all"
-                    >
-                      {article.url}
-                    </a>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Study Type */}
+            {studyType && (
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border-l-4 border-purple-500">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <div>
+                    <span className="text-purple-900 dark:text-purple-300 font-semibold text-xs uppercase tracking-wide block">Tipo de Estudo</span>
+                    <span className="text-gray-900 dark:text-white font-bold">{studyType}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Keywords */}
             {keywords.length > 0 && (
@@ -281,28 +348,8 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
               </div>
             )}
 
-            {/* Relevance Reasons */}
-            {article.score.reasons.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Por que é relevante
-                </h3>
-                <ul className="space-y-2">
-                  {article.score.reasons.map((reason, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <span className="text-green-600 dark:text-green-400 mt-0.5">✓</span>
-                      <span>{reason}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
             {/* Structured Study Information */}
-            {(structuredInfo.objective || structuredInfo.results || structuredInfo.conclusion) && (
+            {(structuredInfo.objective || structuredInfo.methodology || structuredInfo.results || structuredInfo.conclusion) && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 text-lg">
                   <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,6 +365,17 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
                     </h4>
                     <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                       {structuredInfo.objective}
+                    </p>
+                  </div>
+                )}
+
+                {structuredInfo.methodology && (
+                  <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border-l-4 border-indigo-500">
+                    <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2">
+                      <span>🔬</span> Metodologia
+                    </h4>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {structuredInfo.methodology}
                     </p>
                   </div>
                 )}

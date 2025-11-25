@@ -62,6 +62,7 @@ export const Phase5Analysis: React.FC<Props> = ({
   const [selectedArticleForDetails, setSelectedArticleForDetails] = useState<Article | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set()); // IDs de artigos removidos
   const [citationDropdownOpen, setCitationDropdownOpen] = useState<string | null>(null);
   const [expandedSimilar, setExpandedSimilar] = useState<string | null>(null);
   const [similarArticles, setSimilarArticles] = useState<Record<string, Article[]>>({});
@@ -84,9 +85,10 @@ export const Phase5Analysis: React.FC<Props> = ({
   }, [favorites]);
 
   // Calculate accessible articles first (will be used in multiple places)
+  // Also filter out removed articles
   const accessibleArticles = useMemo(() => {
-    return articles.filter(a => a.doi || a.pdfUrl);
-  }, [articles]);
+    return articles.filter(a => (a.doi || a.pdfUrl) && !removedIds.has(a.id));
+  }, [articles, removedIds]);
 
   // Investigate P1 false positives - log articles with inconsistent data
   useEffect(() => {
@@ -198,14 +200,20 @@ export const Phase5Analysis: React.FC<Props> = ({
   // Remove selected articles
   const handleRemoveSelected = () => {
     if (confirm(`Remover ${selectedIds.size} artigos selecionados?`)) {
+      // Add to removed IDs
+      const newRemovedIds = new Set(removedIds);
+      selectedIds.forEach(id => newRemovedIds.add(id));
+      setRemovedIds(newRemovedIds);
+
       // Remove from favorites too
       const newFavorites = new Set(favorites);
       selectedIds.forEach(id => newFavorites.delete(id));
       setFavorites(newFavorites);
 
       // Clear selection
+      const count = selectedIds.size;
       setSelectedIds(new Set());
-      onSuccess(`${selectedIds.size} artigos removidos`);
+      onSuccess(`${count} artigos removidos com sucesso!`);
     }
   };
 
@@ -541,16 +549,23 @@ export const Phase5Analysis: React.FC<Props> = ({
                           </a>
                         )}
 
-                        {/* Citation Dropdown - Click to open */}
-                        <div className="relative">
+                        {/* Citation Dropdown - Click to open, stays open on hover */}
+                        <div
+                          className="relative"
+                          onMouseLeave={() => setCitationDropdownOpen(null)}
+                        >
                           <button
                             onClick={() => setCitationDropdownOpen(isCitationOpen ? null : article.id)}
+                            onMouseEnter={() => isCitationOpen && setCitationDropdownOpen(article.id)}
                             className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                           >
-                            📋 Citação ▼
+                            📋 Bibliografia ▼
                           </button>
                           {isCitationOpen && (
-                            <div className="absolute bottom-full mb-1 left-0 bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10">
+                            <div
+                              className="absolute bottom-full mb-1 left-0 bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10"
+                              onMouseEnter={() => setCitationDropdownOpen(article.id)}
+                            >
                               <button
                                 onClick={() => {
                                   copyToClipboard(formatABNT(article), 'ABNT');
@@ -558,7 +573,7 @@ export const Phase5Analysis: React.FC<Props> = ({
                                 }}
                                 className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
                               >
-                                Copiar ABNT
+                                📋 Copiar ABNT
                               </button>
                               <button
                                 onClick={() => {
@@ -567,7 +582,7 @@ export const Phase5Analysis: React.FC<Props> = ({
                                 }}
                                 className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
                               >
-                                Copiar APA
+                                📋 Copiar APA
                               </button>
                               <button
                                 onClick={() => {
@@ -576,7 +591,7 @@ export const Phase5Analysis: React.FC<Props> = ({
                                 }}
                                 className="w-full px-3 py-1 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs"
                               >
-                                Copiar Vancouver
+                                📋 Copiar Vancouver
                               </button>
                             </div>
                           )}
