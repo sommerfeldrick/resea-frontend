@@ -89,12 +89,11 @@ export const Phase5Analysis: React.FC<Props> = ({
 
   // Calculate accessible articles first (will be used in multiple places)
   // Also filter out removed articles
-  // ONLY show articles with full-text (fullContent or sections)
+  // Backend já garante que todos artigos têm full-text (fullContent ou sections)
   const accessibleArticles = useMemo(() => {
     return articles.filter(a =>
       (a.doi || a.pdfUrl) &&
-      !removedIds.has(a.id) &&
-      (a.fullContent || a.sections) // Filter: only articles with full-text
+      !removedIds.has(a.id)
     );
   }, [articles, removedIds]);
 
