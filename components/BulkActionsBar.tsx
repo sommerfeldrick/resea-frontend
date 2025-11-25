@@ -40,6 +40,9 @@ export const BulkActionsBar: React.FC<Props> = ({
   onRemoveSelected,
   onSuccess
 }) => {
+  const [bibliographyDropdownOpen, setBibliographyDropdownOpen] = React.useState(false);
+  const dropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   if (selectedIds.size === 0) return null;
 
   const selectedArticles = articles.filter(a => selectedIds.has(a.id));
@@ -129,8 +132,24 @@ export const BulkActionsBar: React.FC<Props> = ({
           </button>
 
           {/* Generate Bibliography - Dropdown */}
-          <div className="relative group">
+          <div
+            className="relative"
+            onMouseEnter={() => {
+              // Cancel any pending close
+              if (dropdownTimeoutRef.current) {
+                clearTimeout(dropdownTimeoutRef.current);
+                dropdownTimeoutRef.current = null;
+              }
+            }}
+            onMouseLeave={() => {
+              // Delay closing by 500ms
+              dropdownTimeoutRef.current = setTimeout(() => {
+                setBibliographyDropdownOpen(false);
+              }, 500);
+            }}
+          >
             <button
+              onClick={() => setBibliographyDropdownOpen(!bibliographyDropdownOpen)}
               className="flex items-center gap-2 px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-colors"
               title="Gerar Bibliografia"
             >
@@ -144,33 +163,47 @@ export const BulkActionsBar: React.FC<Props> = ({
             </button>
 
             {/* Dropdown menu */}
-            <div className="absolute bottom-full mb-2 left-0 hidden group-hover:block bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 min-w-[200px] border border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => handleGenerateBibliography('abnt')}
-                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              >
-                📋 Copiar ABNT
-              </button>
-              <button
-                onClick={() => handleGenerateBibliography('apa')}
-                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              >
-                📋 Copiar APA
-              </button>
-              <button
-                onClick={() => handleGenerateBibliography('vancouver')}
-                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              >
-                📋 Copiar Vancouver
-              </button>
-              <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
-              <button
-                onClick={handleExportBibTeX}
-                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              >
-                💾 Exportar BibTeX
-              </button>
-            </div>
+            {bibliographyDropdownOpen && (
+              <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 min-w-[200px] border border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    handleGenerateBibliography('abnt');
+                    setBibliographyDropdownOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  📋 Copiar ABNT
+                </button>
+                <button
+                  onClick={() => {
+                    handleGenerateBibliography('apa');
+                    setBibliographyDropdownOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  📋 Copiar APA
+                </button>
+                <button
+                  onClick={() => {
+                    handleGenerateBibliography('vancouver');
+                    setBibliographyDropdownOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  📋 Copiar Vancouver
+                </button>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                <button
+                  onClick={() => {
+                    handleExportBibTeX();
+                    setBibliographyDropdownOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                >
+                  💾 Exportar BibTeX
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Remove selected */}

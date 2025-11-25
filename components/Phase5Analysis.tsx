@@ -71,6 +71,9 @@ export const Phase5Analysis: React.FC<Props> = ({
   const [visibleCount, setVisibleCount] = useState(20);
   const articlesPerPage = 20;
 
+  // Ref para timeout do dropdown
+  const dropdownTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
   // Load favorites from localStorage
   useEffect(() => {
     const savedFavorites = localStorage.getItem('resea-favorites');
@@ -549,23 +552,31 @@ export const Phase5Analysis: React.FC<Props> = ({
                           </a>
                         )}
 
-                        {/* Citation Dropdown - Click to open, stays open on hover */}
+                        {/* Citation Dropdown - Click to open, stays open with delay */}
                         <div
                           className="relative"
-                          onMouseLeave={() => setCitationDropdownOpen(null)}
+                          onMouseEnter={() => {
+                            // Cancel any pending close
+                            if (dropdownTimeoutRef.current) {
+                              clearTimeout(dropdownTimeoutRef.current);
+                              dropdownTimeoutRef.current = null;
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            // Delay closing by 500ms to give time to move mouse to dropdown
+                            dropdownTimeoutRef.current = setTimeout(() => {
+                              setCitationDropdownOpen(null);
+                            }, 500);
+                          }}
                         >
                           <button
                             onClick={() => setCitationDropdownOpen(isCitationOpen ? null : article.id)}
-                            onMouseEnter={() => isCitationOpen && setCitationDropdownOpen(article.id)}
                             className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                           >
                             📋 Bibliografia ▼
                           </button>
                           {isCitationOpen && (
-                            <div
-                              className="absolute bottom-full mb-1 left-0 bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10"
-                              onMouseEnter={() => setCitationDropdownOpen(article.id)}
-                            >
+                            <div className="absolute bottom-full mb-1 left-0 bg-white dark:bg-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] border border-gray-200 dark:border-gray-600 z-10">
                               <button
                                 onClick={() => {
                                   copyToClipboard(formatABNT(article), 'ABNT');

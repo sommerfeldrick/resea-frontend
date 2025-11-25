@@ -109,7 +109,7 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
 
   const studyType = detectStudyType(article.title + ' ' + article.abstract);
 
-  // Extract structured information from abstract (multilingual support)
+  // Extract structured information from abstract (improved algorithm)
   const extractStructuredInfo = (abstract: string) => {
     if (!abstract || abstract.trim().length === 0) {
       return { objective: null, results: null, conclusion: null, methodology: null };
@@ -120,92 +120,144 @@ export const ArticleDetailsModal: React.FC<Props> = ({ article, onClose }) => {
     let conclusion = null;
     let methodology = null;
 
-    // Step 1: Check for structured abstract with labels
+    const usedIndices = new Set<number>(); // Track which sentences we've used
+
+    // Step 1: Try structured abstract with explicit labels
     const structuredPatterns = {
-      objective: /(?:objective|aim|purpose|goal|objetivo|finalidade)[:\s]+(.*?)(?=(?:method|result|conclusion|metodologia|resultado|conclusão|$))/is,
-      methodology: /(?:method|methodology|design|procedur|metodologia|método|delineamento)[:\s]+(.*?)(?=(?:result|finding|conclusion|resultado|achado|conclusão|$))/is,
-      results: /(?:result|finding|outcome|resultado|achado|desfecho)[:\s]+(.*?)(?=(?:conclusion|discussion|implication|conclusão|discussão|implicação|$))/is,
-      conclusion: /(?:conclusion|implication|suggest|recommendation|conclusão|sugestão|recomendação)[:\s]+(.*?)$/is
+      objective: /(?:OBJECTIVE|OBJECTIVES|AIM|AIMS|PURPOSE|GOAL|OBJETIVO|OBJETIVOS)[:\s]+([^.]+(?:\.[^.]+){0,2})/i,
+      methodology: /(?:METHODS?|METHODOLOGY|DESIGN|MATERIALS?\s+AND\s+METHODS?|MÉTODOS?|METODOLOGIA)[:\s]+([^.]+(?:\.[^.]+){0,2})/i,
+      results: /(?:RESULTS?|FINDINGS?|OUTCOMES?|RESULTADOS?|ACHADOS?)[:\s]+([^.]+(?:\.[^.]+){0,2})/i,
+      conclusion: /(?:CONCLUSIONS?|IMPLICATIONS?|SUMMARY|CONCLUSÕES?|IMPLICAÇÕES?)[:\s]+([^.]+(?:\.[^.]+){0,2})/i
     };
 
-    // Try to extract using patterns
     const objMatch = abstract.match(structuredPatterns.objective);
-    if (objMatch) objective = objMatch[1].trim().substring(0, 500);
+    if (objMatch && objMatch[1].length > 20) {
+      objective = objMatch[1].trim();
+    }
 
     const methMatch = abstract.match(structuredPatterns.methodology);
-    if (methMatch) methodology = methMatch[1].trim().substring(0, 500);
+    if (methMatch && methMatch[1].length > 20) {
+      methodology = methMatch[1].trim();
+    }
 
     const resMatch = abstract.match(structuredPatterns.results);
-    if (resMatch) results = resMatch[1].trim().substring(0, 500);
+    if (resMatch && resMatch[1].length > 20) {
+      results = resMatch[1].trim();
+    }
 
     const concMatch = abstract.match(structuredPatterns.conclusion);
-    if (concMatch) conclusion = concMatch[1].trim().substring(0, 500);
+    if (concMatch && concMatch[1].length > 20) {
+      conclusion = concMatch[1].trim();
+    }
 
-    // Step 2: Fallback to keyword-based extraction if structured patterns failed
-    const sentences = abstract.split(/[.!?]\s+/).filter(s => s.trim().length > 10);
+    // If we found structured labels, return now
+    if (objective || methodology || results || conclusion) {
+      return { objective, results, conclusion, methodology };
+    }
 
+    // Step 2: Fallback - sentence-based extraction with better validation
+    const sentences = abstract
+      .split(/[.!?]\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20); // Filter out very short fragments
+
+    // Helper: Check if sentence is informative (not just "was categorized into 4 Groups")
+    const isInformative = (sentence: string): boolean => {
+      const lower = sentence.toLowerCase();
+      // Reject sentences that are too generic or fragmentary
+      if (lower.match(/^(the|this|was|were|into|groups?|categories?)[\s\w]{0,30}$/)) return false;
+      // Reject sentences that are just method descriptions without context
+      if (lower.match(/^(was|were)\s+(categorized|divided|grouped|classified)/)) return false;
+      return sentence.split(' ').length >= 8; // At least 8 words
+    };
+
+    // Extract objective (first 3 sentences, strong keywords)
     if (!objective) {
-      // Keywords in English and Portuguese
-      const objectiveKeywords = ['objective', 'aim', 'purpose', 'goal', 'investigate', 'examine', 'evaluate', 'assess', 'analyze',
-                                  'objetivo', 'finalidade', 'propósito', 'investigar', 'examinar', 'avaliar', 'analisar'];
       for (let i = 0; i < Math.min(3, sentences.length); i++) {
-        const lower = sentences[i].toLowerCase();
-        if (objectiveKeywords.some(kw => lower.includes(kw))) {
-          objective = sentences[i].trim();
+        const sent = sentences[i];
+        const lower = sent.toLowerCase();
+        const hasStrongKeyword = /\b(objective|aim|purpose|goal|to\s+(investigate|examine|evaluate|assess|analyze|study|review))\b/i.test(lower);
+
+        if (hasStrongKeyword && isInformative(sent) && !usedIndices.has(i)) {
+          objective = sent;
+          usedIndices.add(i);
           break;
         }
       }
     }
 
+    // Extract methodology (sentences 2-6, method keywords)
     if (!methodology) {
-      const methodKeywords = ['method', 'methodology', 'design', 'procedure', 'conducted', 'performed', 'carried out',
-                             'metodologia', 'método', 'delineamento', 'procedimento', 'realizado', 'executado'];
-      const earlySection = sentences.slice(1, Math.min(sentences.length, 5));
-      for (const sentence of earlySection) {
-        const lower = sentence.toLowerCase();
-        if (methodKeywords.some(kw => lower.includes(kw))) {
-          methodology = sentence.trim();
+      for (let i = 1; i < Math.min(6, sentences.length); i++) {
+        if (usedIndices.has(i)) continue;
+
+        const sent = sentences[i];
+        const lower = sent.toLowerCase();
+        const hasMethodKeyword = /\b(method|methodology|conducted|performed|carried\s+out|study\s+design|analysis|reviewed)\b/i.test(lower);
+
+        if (hasMethodKeyword && isInformative(sent)) {
+          methodology = sent;
+          usedIndices.add(i);
           break;
         }
       }
     }
 
+    // Extract results (middle third, results keywords)
     if (!results) {
-      const resultsKeywords = ['result', 'found', 'showed', 'demonstrated', 'revealed', 'indicated', 'observed',
-                              'significant', 'increase', 'decrease', 'improve', 'reduction',
-                              'resultado', 'encontrado', 'mostrou', 'demonstrou', 'revelou', 'indicou', 'observado',
-                              'significativo', 'aumento', 'redução', 'melhora'];
-      const middleStart = Math.floor(sentences.length * 0.3);
-      const middleEnd = Math.floor(sentences.length * 0.7);
-      for (let i = middleStart; i < middleEnd; i++) {
-        const lower = sentences[i].toLowerCase();
-        if (resultsKeywords.some(kw => lower.includes(kw))) {
-          results = sentences.slice(i, Math.min(i + 2, sentences.length)).join('. ').trim();
+      const start = Math.floor(sentences.length * 0.35);
+      const end = Math.floor(sentences.length * 0.75);
+
+      for (let i = start; i < end; i++) {
+        if (usedIndices.has(i)) continue;
+
+        const sent = sentences[i];
+        const lower = sent.toLowerCase();
+        const hasResultKeyword = /\b(result|found|showed|demonstrated|revealed|indicated|observed|significant|p\s*<|higher|lower)\b/i.test(lower);
+
+        if (hasResultKeyword && isInformative(sent)) {
+          // Take up to 2 sentences for results
+          const endIdx = Math.min(i + 2, sentences.length);
+          const resultSentences = [];
+          for (let j = i; j < endIdx && resultSentences.length < 2; j++) {
+            if (!usedIndices.has(j)) {
+              resultSentences.push(sentences[j]);
+              usedIndices.add(j);
+            }
+          }
+          results = resultSentences.join('. ');
           break;
         }
       }
     }
 
+    // Extract conclusion (last 3 sentences, conclusion keywords)
     if (!conclusion) {
-      const conclusionKeywords = ['conclusion', 'conclude', 'suggest', 'indicate', 'demonstrate', 'findings',
-                                 'evidence', 'implication', 'recommend',
-                                 'conclusão', 'concluir', 'sugerir', 'indicar', 'achados', 'evidência',
-                                 'implicação', 'recomendar'];
       for (let i = Math.max(0, sentences.length - 3); i < sentences.length; i++) {
-        const lower = sentences[i].toLowerCase();
-        if (conclusionKeywords.some(kw => lower.includes(kw))) {
-          conclusion = sentences.slice(i).join('. ').trim();
+        if (usedIndices.has(i)) continue;
+
+        const sent = sentences[i];
+        const lower = sent.toLowerCase();
+        const hasConclusionKeyword = /\b(conclusion|conclude|suggest|therefore|thus|indicate|demonstrate|findings|evidence|implication|recommend)\b/i.test(lower);
+
+        if (hasConclusionKeyword && isInformative(sent)) {
+          // Take remaining sentences for conclusion
+          const conclusionSentences = [];
+          for (let j = i; j < sentences.length; j++) {
+            if (!usedIndices.has(j)) {
+              conclusionSentences.push(sentences[j]);
+              usedIndices.add(j);
+            }
+          }
+          conclusion = conclusionSentences.join('. ');
           break;
         }
       }
     }
 
-    // Final fallbacks
-    if (!objective && sentences.length > 0) {
-      objective = sentences[0].trim();
-    }
-    if (!conclusion && sentences.length > 0) {
-      conclusion = sentences[sentences.length - 1].trim();
+    // Very conservative fallbacks - only if we haven't found anything
+    if (!objective && sentences.length > 0 && !usedIndices.has(0)) {
+      objective = sentences[0];
     }
 
     return { objective, results, conclusion, methodology };
