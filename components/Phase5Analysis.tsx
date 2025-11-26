@@ -30,6 +30,16 @@ interface Article {
   pdfUrl?: string;
   fullContent?: string;
   sections?: Record<string, string>;
+  // ✨ NEW: Enrichment metadata
+  fulltextSource?: string;  // e.g., "Unpaywall (PDF)", "OpenAlex", "Abstract only"
+  fulltextFormat?: string;  // e.g., "pdf", "abstract", "jats", "latex"
+  journalMetrics?: {
+    qualityScore: number;    // 0-100
+    hIndex: number;          // Journal h-index
+    quartile: 'Q1' | 'Q2' | 'Q3' | 'Q4' | null;
+    twoYearCitedness: number;  // Average citations per paper (2yr)
+    subjectAreas: string[];   // Primary research areas
+  };
 }
 
 interface KnowledgeGraph {
@@ -521,6 +531,29 @@ export const Phase5Analysis: React.FC<Props> = ({
                         {article.score.reasons.length > 0 && (
                           <span className="text-xs text-indigo-600 dark:text-indigo-400">
                             ✨ {article.score.reasons[0]}
+                          </span>
+                        )}
+                        {/* ✨ NEW: Fulltext source badge */}
+                        {article.fulltextSource && article.fulltextSource !== 'Abstract only' && (
+                          <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded">
+                            📥 {article.fulltextSource}
+                          </span>
+                        )}
+                        {/* ✨ NEW: Format badge */}
+                        {article.fulltextFormat && article.fulltextFormat !== 'abstract' && (
+                          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-1 rounded">
+                            {article.fulltextFormat.toUpperCase()}
+                          </span>
+                        )}
+                        {/* ✨ NEW: Journal quartile badge */}
+                        {article.journalMetrics?.quartile && (
+                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                            article.journalMetrics.quartile === 'Q1' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                            article.journalMetrics.quartile === 'Q2' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400' :
+                            article.journalMetrics.quartile === 'Q3' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' :
+                            'bg-gray-200 text-gray-600 dark:bg-gray-800/20 dark:text-gray-500'
+                          }`}>
+                            🏆 {article.journalMetrics.quartile} (h-index: {article.journalMetrics.hIndex})
                           </span>
                         )}
                       </div>
