@@ -1399,11 +1399,9 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
   const renderPhase3Strategy = () => {
     if (!searchStrategy) return <div>Carregando estratégia...</div>;
 
-    // Validação defensiva contra JSON malformado
-    const queries = searchStrategy.queries || {};
-    const p1Queries = Array.isArray(queries.P1) ? queries.P1 : [];
-    const p2Queries = Array.isArray(queries.P2) ? queries.P2 : [];
-    const p3Queries = Array.isArray(queries.P3) ? queries.P3 : [];
+    // Backend retorna queries como array flat (não separado por P1/P2/P3)
+    // A classificação P1/P2/P3 acontece DEPOIS da busca, baseado no score dos artigos
+    const queries = Array.isArray(searchStrategy.queries) ? searchStrategy.queries : [];
     const keyTerms = searchStrategy.keyTerms || { primary: [], specific: [], methodological: [] };
     const filters = searchStrategy.filters || {};
     const dateRange = filters.dateRange || { start: 2020, end: 2025 };
@@ -1514,54 +1512,38 @@ export const ResearchWizard: React.FC<ResearchWizardProps> = ({
             {/* Queries */}
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-                Queries que usarei:
+                Queries que usarei ({queries.length} queries):
               </h3>
 
-              {/* P1 */}
-              {p1Queries.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    P1 (Artigos Excelentes - Score ≥70):
-                  </h4>
-                  <ul className="space-y-1">
-                    {p1Queries.map((q, idx) => (
-                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                        • "{q.query || 'Query inválida'}"
+              {queries.length > 0 ? (
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 italic">
+                    * A classificação P1/P2/P3 será feita APÓS a busca, baseada no score dos artigos encontrados
+                    (journal quality, citations, study type, fulltext availability)
+                  </p>
+                  <ul className="space-y-2">
+                    {queries.map((q: any, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="text-indigo-500 dark:text-indigo-400 font-mono text-sm flex-shrink-0">
+                          {String(idx + 1).padStart(2, '0')}.
+                        </span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          "{q.query || 'Query inválida'}"
+                        </span>
+                        {q.expectedResults && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto flex-shrink-0">
+                            ~{q.expectedResults} artigos
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
                 </div>
-              )}
-
-              {/* P2 */}
-              {p2Queries.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    P2 (Artigos Bons - Score ≥45):
-                  </h4>
-                  <ul className="space-y-1">
-                    {p2Queries.map((q, idx) => (
-                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                        • "{q.query || 'Query inválida'}"
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* P3 */}
-              {p3Queries.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    P3 (Artigos Aceitáveis - Score 30-44):
-                  </h4>
-                  <ul className="space-y-1">
-                    {p3Queries.map((q, idx) => (
-                      <li key={idx} className="text-sm text-gray-600 dark:text-gray-400 pl-4">
-                        • "{q.query || 'Query inválida'}"
-                      </li>
-                    ))}
-                  </ul>
+              ) : (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    ⚠️ Nenhuma query foi gerada. Isso pode indicar um problema na estratégia de busca.
+                  </p>
                 </div>
               )}
             </div>
